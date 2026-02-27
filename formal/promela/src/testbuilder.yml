@@ -1,0 +1,16 @@
+spin2test: /home/a/Downloads/rtems/RTEMS-SMP-Formal-main/formal/promela/src/spin2test.py
+modelsfile: /home/a/Downloads/rtems/RTEMS-SMP-Formal-main/formal/promela/models/models.yml
+
+# Use rtemsbuilt consistently
+rtems: /home/a/Downloads/rtemsbuilt/
+rsb: /home/a/rtems/7/bin/
+simulator: /usr/bin/qemu-system-aarch64
+
+# All paths should be under rtemsbuilt/
+testyamldir: /home/a/Downloads/rtemsbuilt/spec/build/testsuites/validation/
+testcode: /home/a/Downloads/rtemsbuilt/testsuites/validation/
+testexedir: /home/a/Downloads/rtemsbuilt/testsuites/validation/
+
+testsuite: task-mgr
+simulatorargs: "-machine virt -cpu cortex-a53 -nographic -kernel"
+spinallscenarios: -DTEST_GEN -run -E -c0 -e

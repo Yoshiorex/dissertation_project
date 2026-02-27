@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Prototype Semantics: Promela to RTEMS Refinement
+
+# Copyright (C) 2025 Trinity College Dublin (www.tcd.ie)
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+LANGUAGE: C
+
+SEGNAMEPFX: TestSegment{} # segnumber
+SEGARG: Context* ctx
+SEGDECL: static void {}( {} )  # segnamepf{segnumber}, segarg,
+SEGBEGIN: " {"
+SEGEND: "}"
+
+NAME: |
+  /* Test Name is defined in the Test Case code (tc-model-events-mgr.c) */
+
+test_sync_sema_DCL: rtems_id {0}[{1}];
+
+INIT: |
+  initialise_semaphore( 0, ctx->runner_wakeup, test_sync_sema );
+  initialise_semaphore( 1, ctx->worker_wakeup, test_sync_sema );
+
+Runner: |
+  checkTaskIs( ctx->runner_id );
+
+Worker: |
+  checkTaskIs( ctx->worker_id );
+
+SIGNAL: |
+  ReleaseTestSyncSema( test_sync_sema[{}] );
+
+WAIT: |
+  ObtainTestSyncSema( test_sync_sema[{}] );
+
+g1_DCL: int
+
+g1:
+  T_eq_int( g1, {0} );
+
+g2_DCL: int
+
+g2:
+  T_eq_int( g2, {0} );
+
+update1: |
+  T_log( T_NORMAL, "Calling update1()" );
+  update1(&g1,&g2);
+
+update2: |
+  T_log( T_NORMAL, "Calling update2()" );
+  update2(&g1,&g2);
+
+SUSPEND: |
+  /* SUSPEND[{0}] release proc{2} suspend proc{1} (us) */
+  T_log( T_NORMAL, "SWITCH-COUNT{0}");
+  ReleaseTestSyncSema( test_sync_sema[{2}] );
+  T_log( T_NORMAL, "Release-{2}");
+  ObtainTestSyncSema( test_sync_sema[{1}] );
+  T_log( T_NORMAL, "Obtain-{1}");
+
+WAKEUP:
+  /* WAKEUP[{0}] do nothing here, we should resume now. */

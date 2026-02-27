@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Runs SPIN to generate test code for all defined scenarios
+
+# Copyright (C) 2023 Trinity College Dublin (www.tcd.ie)
+#               James Gooding Hunt
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+# This should be specialised for your setup, as refine-config.yml,
+# located in the same directory as testbuilder.py for global settings
+# or in the models directory for local settings
+
+testfiletype: .c #tr-<model><test number><testfiletype>, tc-<model><testfiletype>
+runfile: -run.h #<model><runfile>
+preamble: -pre.h #<model><preamble>
+postamble: -post.h #<model><postamble>
+testcase_runfile: -run.h #tc-<model><runfile>
+testcase_preamble: -pre.h #tc-<model><preamble>
+testcase_postamble: -post.h #tc-<model><postamble>
+refinefile: -rfn.yml #<model><refinefile>
