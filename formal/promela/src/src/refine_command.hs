@@ -1,641 +1,655 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import GHC.Generics
-import Data.List
-import Data.Aeson as A
-import Data.Aeson.Encode.Pretty as P
-import Data.Aeson.Types (Options(..), defaultOptions)
-import System.IO as S
-import Data.ByteString.Lazy.Char8 as B
-import Data.Text as T
-import Data.Char
-import qualified Data.ByteString as BS
-import Control.Monad (void)
-import Data.Yaml
-import System.Directory
-import System.Exit
+import qualified Data.Aeson as A
+import Data.Aeson ((.:), (.:?))
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
+import qualified Data.Aeson.Types as AT
+import Data.Char (isDigit, toLower)
+import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.List as L
+import Data.Maybe (fromMaybe)
+import qualified Data.Text as T
+import Data.Text (Text)
+import qualified Data.Text.Read as TR
+import qualified Data.Yaml as Y
+import System.Directory (doesFileExist, getCurrentDirectory)
+import System.Environment (getExecutablePath)
+import System.IO (hIsEOF, hSetBuffering, BufferMode(LineBuffering), stdin, stdout)
 
--- Define fields in lowercase (Haskell convention)
-data CommentCodes = CommentCodes
-  { eolc :: Text
-  , cmtbegin :: Text
-  , cmtend :: Text
-  } deriving (Show, Generic)
-
-data DefaultCodes = RefinementCodes -- Keeping user's constructor name
-  { defaultsegnamepfx :: Text
-  , defaultsegarg :: Text
-  , defaultsegdecl :: Text
-  , defaultsegbegin :: Text
-  , defaultsegend :: Text
-  } deriving (Show, Generic)
-
--- NEW: SegmentCodes type to hold resolved segment configuration
-data SegmentCodes = SegmentCodes
-  { scNamePfx :: Text
-  , scArg :: Text
-  , scDecl :: Text
-  , scBegin :: Text
-  , scEnd :: Text
-  } deriving (Show, Generic)
-
-data RefDict = RefDict
-  { language :: Text
-  , segnamepfx :: Text
-  , segarg :: Text
-  , segdecl :: Text
-  , segbegin :: Text
-  , segend :: Text
-  , name :: Text
-  , pending_DCL :: Text
-  , semaphore_DCL :: Text
-  , sc_DCL :: Text
-  , prio_DCL :: Text
-  , createRC_DCL :: Text
-  , startRC_DCL :: Text
-  , deleteRC_DCL :: Text
-  , suspendRC_DCL :: Text
-  , isSuspendRC_DCL :: Text
-  , resumeRC_DCL :: Text
-  , setPriorityRC_DCL :: Text
-  , priority_DCL :: Text
-  , taskID_DCL :: Text
-  , tasks_DCL :: Text
-  , initField :: Text
-  , taskInit :: Text
-  , runner :: Text
-  , worker :: Text
-  , signal :: Text
-  , waitField :: Text
-  , task_create :: Text
-  , task_start :: Text
-  , task_delete :: Text
-  , task_suspend :: Text
-  , task_isSuspended :: Text
-  , task_resume :: Text
-  , task_setPriority :: Text
-  , createRC :: Text
-  , startRC :: Text
-  , delRC :: Text
-  , suspendRC :: Text
-  , isSuspendRC :: Text
-  , resumeRC :: Text
-  , setPriorityRC :: Text
-  , oldPrio :: Text
-  , waitForSuspend :: Text
-  , tooMany :: Text
-  , ready :: Text
-  , zombie :: Text
-  , eventWait :: Text
-  , timeWait :: Text
-  , otherWait :: Text
-  , suspend :: Text
-  , wakeup :: Text
-  , lowerPriority :: Text
-  , equalPriority :: Text
-  , higherPriority :: Text
-  , startLog :: Text
-  , checkPreemption :: Text
-  , checkNoPreemption :: Text
-  , runnerScheduler :: Text
-  , otherScheduler :: Text
-  , setProcessor :: Text
-  } deriving (Show, Generic)
+type RefDict = [(Text, Text)]
 
 data Flags = Flags
-    { outputLOG :: Bool
-    , annoteComments :: Bool
-    , outputSWITCH :: Bool
-    } deriving (Show, Generic)
+  { outputLOG :: Bool
+  , annoteComments :: Bool
+  , outputSWITCH :: Bool
+  } deriving (Show)
 
-data Config = Config
-    { ref_dict :: RefDict
-    , flags :: Flags
-    } deriving (Show, Generic)
+data InputConfig = InputConfig
+  { icRefDict :: RefDict
+  , icFlags :: Flags
+  } deriving (Show)
 
-data ProcessState = ProcessState
-  { inSTRUCT :: Bool
-  , inSEQ :: Bool
-  , seqForSEQ :: Text
-  , inName :: Text
-  , testName :: Text
-  , defCode :: [Text]
-  , declCode :: [Text]
-  , testCodes :: [(Int, [Text])]  -- list of (pid, code lines)
-  , procIds :: Int
-  , currentId :: Int
-  , switchNo :: Int
-  , commentCodes :: CommentCodes
-  , segmentCodes :: SegmentCodes
-  , refDict :: RefDict
-  , p_flags :: Flags
+data RuntimeState = RuntimeState
+  { rtRefDict :: RefDict
+  , rtFlags :: Flags
+  , rtInSTRUCT :: Bool
+  , rtInSEQ :: Bool
+  , rtSeqForSEQ :: Text
+  , rtInName :: Text
+  , rtTestName :: Text
+  , rtDefCode :: [Text]
+  , rtDeclCode :: [Text]
+  , rtTestCodes :: [(Int, [Text])]
+  , rtProcIds :: [Int]
+  , rtCurrentId :: Int
+  , rtSwitchNo :: Int
+  , rtEOLC :: Text
+  , rtCMTBEGIN :: Text
+  , rtCMTEND :: Text
+  , rtSegNamePfx :: Text
+  , rtSegArg :: Text
+  , rtSegDecl :: Text
+  , rtSegBegin :: Text
+  , rtSegEnd :: Text
+  } deriving (Show)
+
+data Session = Session
+  { ssRuntime :: Maybe RuntimeState
   }
 
-fieldToJSON :: String -> String
-fieldToJSON fieldName =
-    case fieldName of
-        "language" -> "LANGUAGE"
-        "segnamepfx" -> "SEGNAMEPFX"
-        "segarg" -> "SEGARG"
-        "segdecl" -> "SEGDECL"
-        "segbegin" -> "SEGBEGIN"
-        "segend" -> "SEGEND"
-        "name" -> "NAME"
-        "initField" -> "INIT"
-        "taskInit" -> "TASK_INIT"
-        "waitField" -> "WAIT"
-        "runner" -> "Runner"
-        "worker" -> "Worker"
-        "signal" -> "SIGNAL"
-        "waitForSuspend" -> "WaitForSuspend"
-        "tooMany" -> "TooMany"
-        "ready" -> "Ready"
-        "zombie" -> "Zombie"
-        "eventWait" -> "EventWait"
-        "timeWait" -> "TimeWait"
-        "otherWait" -> "OtherWait"
-        "suspend" -> "SUSPEND"
-        "wakeup" -> "WAKEUP"
-        "lowerPriority" -> "LowerPriority"
-        "equalPriority" -> "EqualPriority"
-        "higherPriority" -> "HigherPriority"
-        "startLog" -> "StartLog"
-        "checkPreemption" -> "CheckPreemption"
-        "checkNoPreemption" -> "CheckNoPreemption"
-        "runnerScheduler" -> "RunnerScheduler"
-        "otherScheduler" -> "OtherScheduler"
-        "setProcessor" -> "SetProcessor"
-        _ -> fieldName
+instance A.FromJSON Flags where
+  parseJSON = AT.withObject "Flags" $ \o ->
+    Flags <$> o .:? "outputLOG" AT..!= False
+          <*> o .:? "annoteComments" AT..!= True
+          <*> o .:? "outputSWITCH" AT..!= True
 
-instance FromJSON RefDict where
-    parseJSON = genericParseJSON defaultOptions
-        { fieldLabelModifier = fieldToJSON
+instance A.FromJSON InputConfig where
+  parseJSON = AT.withObject "InputConfig" $ \o -> do
+    refVal <- o .: "ref_dict"
+    flags <- o .:? "flags" AT..!= Flags False True True
+    refDict <- case refVal of
+      A.Object km -> pure $ keyMapToRefDict km
+      _ -> fail "ref_dict must be an object"
+    pure $ InputConfig refDict flags
+
+keyMapToRefDict :: KM.KeyMap A.Value -> RefDict
+keyMapToRefDict km =
+  [ (K.toText k, valueToText v) | (k, v) <- KM.toList km ]
+
+valueToText :: A.Value -> Text
+valueToText (A.String s) = s
+valueToText (A.Number n) = T.pack (show n)
+valueToText (A.Bool True) = "true"
+valueToText (A.Bool False) = "false"
+valueToText A.Null = ""
+valueToText other = T.pack (BL.unpack (A.encode other))
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
+
+splitLines :: Text -> [Text]
+splitLines = T.splitOn "\n"
+
+replaceFirst :: Text -> Text -> Text -> Text
+replaceFirst needle repl txt =
+  let (before, after) = T.breakOn needle txt
+  in if T.null after
+     then txt
+     else before <> repl <> T.drop (T.length needle) after
+
+formatTemplate :: Text -> [Text] -> Text
+formatTemplate template args =
+  let indexed = L.foldl'
+        (\acc (i, arg) -> T.replace ("{" <> tshow i <> "}") arg acc)
+        template
+        (zip [0 :: Int ..] args)
+  in L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
+
+findLanguageFile :: String -> IO (Maybe FilePath)
+findLanguageFile lang = do
+  exePath <- getExecutablePath
+  cwd <- getCurrentDirectory
+  let exeDir = dirname exePath
+      fileName = L.map toLower lang ++ ".yml"
+      candidates =
+        [ exeDir ++ "/languages/" ++ fileName
+        , cwd ++ "/languages/" ++ fileName
+        , cwd ++ "/src/languages/" ++ fileName
+        , cwd ++ "/src/src/languages/" ++ fileName
+        , cwd ++ "/../languages/" ++ fileName
+        , cwd ++ "/../src/languages/" ++ fileName
+        ]
+  firstExisting candidates
+  where
+    dirname p =
+      case L.elemIndices '/' p of
+        [] -> "."
+        xs -> L.take (L.last xs) p
+    firstExisting [] = pure Nothing
+    firstExisting (p:ps) = do
+      exists <- doesFileExist p
+      if exists then pure (Just p) else firstExisting ps
+
+loadLanguageMap :: String -> IO (Either String RefDict)
+loadLanguageMap lang = do
+  mfile <- findLanguageFile lang
+  case mfile of
+    Nothing -> pure $ Left ("Language file not found for " ++ lang)
+    Just path -> do
+      parsed <- Y.decodeFileEither path :: IO (Either Y.ParseException A.Value)
+      case parsed of
+        Left err -> pure $ Left (show err)
+        Right (A.Object obj) -> pure $ Right (keyMapToRefDict obj)
+        Right _ -> pure $ Left ("Language file does not contain an object: " ++ path)
+
+loadLanguageWithFallback :: String -> IO (Either String RefDict)
+loadLanguageWithFallback lang = do
+  res <- loadLanguageMap lang
+  case res of
+    Right m -> pure (Right m)
+    Left _ ->
+      if L.map toLower lang /= "c"
+        then loadLanguageMap "c"
+        else pure res
+
+requireKey :: Text -> RefDict -> Either String Text
+requireKey key m =
+  case L.lookup key m of
+    Just v -> Right v
+    Nothing -> Left ("Missing required key in language YAML: " ++ T.unpack key)
+
+applyCommentsFromMap :: RefDict -> RuntimeState -> Either String RuntimeState
+applyCommentsFromMap m rt = do
+  eolc <- requireKey "EOLC" m
+  cmtbegin <- requireKey "CMTBEGIN" m
+  cmtend <- requireKey "CMTEND" m
+  pure rt
+    { rtEOLC = eolc
+    , rtCMTBEGIN = cmtbegin
+    , rtCMTEND = cmtend
+    }
+
+applyDefaultsFromMap :: RefDict -> RuntimeState -> RuntimeState
+applyDefaultsFromMap m rt =
+  rt
+    { rtSegNamePfx = fromMaybe (rtSegNamePfx rt) (L.lookup "SEGNAMEPFX" m)
+    , rtSegArg = fromMaybe (rtSegArg rt) (L.lookup "SEGARG" m)
+    , rtSegDecl = fromMaybe (rtSegDecl rt) (L.lookup "SEGDECL" m)
+    , rtSegBegin = fromMaybe (rtSegBegin rt) (L.lookup "SEGBEGIN" m)
+    , rtSegEnd = fromMaybe (rtSegEnd rt) (L.lookup "SEGEND" m)
+    }
+
+setupSegmentCode :: RuntimeState -> RuntimeState
+setupSegmentCode rt =
+  rt
+    { rtSegNamePfx = fromMaybe (rtSegNamePfx rt) (L.lookup "SEGNAMEPFX" (rtRefDict rt))
+    , rtSegArg = fromMaybe (rtSegArg rt) (L.lookup "SEGARG" (rtRefDict rt))
+    , rtSegDecl = fromMaybe (rtSegDecl rt) (L.lookup "SEGDECL" (rtRefDict rt))
+    , rtSegBegin = fromMaybe (rtSegBegin rt) (L.lookup "SEGBEGIN" (rtRefDict rt))
+    , rtSegEnd = fromMaybe (rtSegEnd rt) (L.lookup "SEGEND" (rtRefDict rt))
+    }
+
+setupLanguageRuntime :: RuntimeState -> IO (Either String RuntimeState)
+setupLanguageRuntime rt =
+  case L.lookup "LANGUAGE" (rtRefDict rt) of
+    Nothing -> pure (Right rt) -- Python does nothing when LANGUAGE key is absent
+    Just langText -> do
+      let lang = L.map toLower (T.unpack langText)
+      langMapRes <- loadLanguageWithFallback lang
+      case langMapRes of
+        Left err -> pure (Left err)
+        Right langMap ->
+          case applyCommentsFromMap langMap rt of
+            Left err -> pure (Left err)
+            Right rt1 ->
+              let rt2 = applyDefaultsFromMap langMap rt1
+                  rt3 = setupSegmentCode rt2
+              in pure (Right rt3)
+
+initRuntime :: InputConfig -> IO (Either String RuntimeState)
+initRuntime (InputConfig refDict flags) = do
+  cMapRes <- loadLanguageMap "c"
+  case cMapRes of
+    Left err -> pure (Left err)
+    Right cMap ->
+      case applyCommentsFromMap cMap baseRuntime of
+        Left err -> pure (Left err)
+        Right withComments -> do
+          let withDefaults = applyDefaultsFromMap cMap withComments
+          setupLanguageRuntime withDefaults
+  where
+    baseRuntime =
+      RuntimeState
+        { rtRefDict = refDict
+        , rtFlags = flags
+        , rtInSTRUCT = False
+        , rtInSEQ = False
+        , rtSeqForSEQ = ""
+        , rtInName = ""
+        , rtTestName = "Un-named Test"
+        , rtDefCode = []
+        , rtDeclCode = []
+        , rtTestCodes = []
+        , rtProcIds = []
+        , rtCurrentId = 0
+        , rtSwitchNo = 0
+        , rtEOLC = ""
+        , rtCMTBEGIN = ""
+        , rtCMTEND = ""
+        , rtSegNamePfx = "TestSegment{}"
+        , rtSegArg = "Context* ctx"
+        , rtSegDecl = "static void {}( {} )"
+        , rtSegBegin = " {"
+        , rtSegEnd = "}"
         }
 
-instance ToJSON RefDict where
-    toJSON = genericToJSON defaultOptions
-        { fieldLabelModifier = fieldToJSON
-        }
+lookupRef :: Text -> RuntimeState -> Maybe Text
+lookupRef key rt = L.lookup key (rtRefDict rt)
 
-commentFieldToJSON :: String -> String
-commentFieldToJSON fieldName =
-    case fieldName of
-        "eolc" -> "EOLC"
-        "cmtbegin" -> "CMTBEGIN"
-        "cmtend" -> "CMTEND"
-        _ -> fieldName
+parsePidText :: Text -> Maybe Int
+parsePidText t =
+  case TR.decimal t of
+    Right (n, rest) | T.null rest -> Just n
+    _ -> Nothing
 
-instance FromJSON CommentCodes where
-    parseJSON = genericParseJSON defaultOptions
-        { fieldLabelModifier = commentFieldToJSON
-        }
+pidFromText :: Text -> Int
+pidFromText = fromMaybe 0 . parsePidText
 
-instance ToJSON CommentCodes where
-    toJSON = genericToJSON defaultOptions
-        { fieldLabelModifier = commentFieldToJSON
-        }
+addCode :: Int -> [Text] -> RuntimeState -> RuntimeState
+addCode pid lines0 rt =
+  rt { rtTestCodes = rtTestCodes rt ++ [(pid, lines0)] }
 
-defaultCodesFieldToJSON :: String -> String
-defaultCodesFieldToJSON fieldName =
-    case fieldName of
-      "defaultsegnamepfx" -> "SEGNAMEPFX"
-      "defaultsegarg" -> "SEGARG"
-      "defaultsegdecl" -> "SEGDECL"
-      "defaultsegbegin" -> "SEGBEGIN"
-      "defaultsegend" -> "SEGEND"
-      _ -> fieldName
+addCodeInt :: Int -> Text -> Text -> Text -> RuntimeState -> RuntimeState
+addCodeInt pid line0 line1 value rt
+  | T.all isDigit value =
+      if value == "0"
+        then addCode pid [line0] rt
+        else addCode pid [line1] rt
+  | otherwise = rt
 
-instance FromJSON DefaultCodes where
-    parseJSON = genericParseJSON defaultOptions
-        { fieldLabelModifier = defaultCodesFieldToJSON
-        , omitNothingFields = True
-        }
+addUniquePid :: Int -> [Int] -> [Int]
+addUniquePid pid pids =
+  if pid `elem` pids then pids else pids ++ [pid]
 
-instance ToJSON DefaultCodes where
-    toJSON :: DefaultCodes -> Value
-    toJSON = genericToJSON defaultOptions
-        { fieldLabelModifier = defaultCodesFieldToJSON
-        , omitNothingFields = True
-        }
+collectPIdsTokens :: [Text] -> RuntimeState -> RuntimeState
+collectPIdsTokens ln rt =
+  case ln of
+    pidTxt:_ ->
+      case parsePidText pidTxt of
+        Just pid -> rt { rtProcIds = addUniquePid pid (rtProcIds rt) }
+        Nothing -> rt
+    _ -> rt
 
-instance FromJSON Flags
-instance ToJSON Flags
-instance FromJSON Main.Config
-instance ToJSON Main.Config
+switchIfRequired :: [Text] -> RuntimeState -> RuntimeState
+switchIfRequired ln rt =
+  case ln of
+    pidTxt:_ ->
+      case parsePidText pidTxt of
+        Nothing -> rt
+        Just pid ->
+          if pid == rtCurrentId rt
+            then rt
+            else
+              let nextSwitch = rtSwitchNo rt + 1
+                  suspendArgs = [tshow nextSwitch, tshow (rtCurrentId rt), tshow pid]
+                  wakeupArgs = [tshow nextSwitch, tshow pid, tshow (rtCurrentId rt)]
+                  rt1 =
+                    case lookupRef "SUSPEND" rt of
+                      Nothing -> addCode pid [rtEOLC rt <> " SUSPEND: no refinement entry found"] rt
+                      Just code -> addCode (rtCurrentId rt) [formatTemplate code suspendArgs] rt
+                  rt2 =
+                    case lookupRef "WAKEUP" rt of
+                      Nothing -> addCode pid [rtEOLC rt <> " WAKEUP: no refinement entry found"] rt1
+                      Just code -> addCode pid [formatTemplate code wakeupArgs] rt1
+              in rt2 { rtCurrentId = pid, rtSwitchNo = nextSwitch }
+    _ -> rt
 
+logSPINLine :: [Text] -> RuntimeState -> RuntimeState
+logSPINLine ln rt =
+  if length ln > 1
+    then
+      let pid = pidFromText (head ln)
+          msg = rtEOLC rt <> " @@@ " <> T.unwords ln
+          kw = ln !! 1
+      in case kw of
+          "NAME" -> rt { rtDefCode = rtDefCode rt ++ [msg] }
+          "DEF" -> rt { rtDefCode = rtDefCode rt ++ [msg] }
+          "DECL" ->
+            if pid == 0
+              then rt { rtDeclCode = rtDeclCode rt ++ [msg] }
+              else addCode pid [msg] rt
+          "DCLARRAY" ->
+            if pid == 0
+              then rt { rtDeclCode = rtDeclCode rt ++ [msg] }
+              else addCode pid [msg] rt
+          "LOG" -> rt
+          _ -> addCode pid ["T_log(T_NORMAL,\"@@@ " <> T.unwords ln <> "\");"] rt
+    else rt
 
+refineSPINLine :: [Text] -> RuntimeState -> RuntimeState
+refineSPINLine spinLine rt =
+  case spinLine of
+    pidTxt:"LOG":rest ->
+      if outputLOG (rtFlags rt)
+        then addCode (pidFromText pidTxt) ["T_log(T_NORMAL," <> T.unwords rest <> ");"] rt
+        else rt
 
-setupComments :: String -> IO CommentCodes
-setupComments language = do
-  S.putStrLn ("Set LANGUAGE to " ++ language ++ "(comments)\n")
-  let filename = "../../src/src/languages/" ++ Data.List.map Data.Char.toLower language ++ ".yml"
-  
-  exists <- doesFileExist filename
-  
-  if exists 
-    then do
-      result <- decodeFileEither filename
-      case result of
+    pidTxt:"NAME":_name:[] ->
+      case lookupRef "NAME" rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE 'NAME'"] rt
+        Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
+
+    pidTxt:"INIT":[] ->
+      case lookupRef "INIT" rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE 'INIT'"] rt
+        Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
+
+    pidTxt:"TASK":taskName:[] ->
+      case lookupRef taskName rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE TASK " <> taskName] rt
+        Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
+
+    pidTxt:"SIGNAL":value:[] ->
+      case lookupRef "SIGNAL" rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE SIGNAL " <> value] rt
+        Just code -> addCode (pidFromText pidTxt) (splitLines (formatTemplate code [value])) rt
+
+    pidTxt:"WAIT":value:[] ->
+      case lookupRef "WAIT" rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE WAIT " <> value] rt
+        Just code -> addCode (pidFromText pidTxt) (splitLines (formatTemplate code [value])) rt
+
+    _pidTxt:"DEF":name:value:[] ->
+      rt { rtDefCode = rtDefCode rt ++ ["#define " <> name <> " " <> value] }
+
+    pidTxt:"DECL":_typ:name:rest ->
+      let key = name <> "_DCL"
+          baseDecl =
+            case lookupRef key rt of
+              Nothing -> rtEOLC rt <> " CANNOT REFINE Decl " <> key
+              Just code -> code <> " " <> name
+          fullDecl =
+            case rest of
+              v:_ -> baseDecl <> " = " <> v <> ";"
+              [] -> baseDecl <> ";"
+      in if pidFromText pidTxt == 0
+           then rt { rtDeclCode = rtDeclCode rt ++ ["static " <> fullDecl] }
+           else addCode (pidFromText pidTxt) [fullDecl] rt
+
+    pidTxt:"DCLARRAY":_typ:name:value:[] ->
+      let key = name <> "_DCL"
+          dclLines =
+            case lookupRef key rt of
+              Nothing -> [rtEOLC rt <> " DCLARRAY: no refinement entry for '" <> key <> "'"]
+              Just code ->
+                let out = formatTemplate code [name, value]
+                in splitLines (if pidFromText pidTxt == 0 then "static " <> out else out)
+      in if pidFromText pidTxt == 0
+           then rt { rtDeclCode = rtDeclCode rt ++ dclLines }
+           else addCode (pidFromText pidTxt) dclLines rt
+
+    pidTxt:"PTR":name:value:[] ->
+      if not (rtInSTRUCT rt)
+        then
+          let pname = name <> "_PTR"
+          in case lookupRef pname rt of
+              Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " PTR: no refinement entry for '" <> pname <> "'"] rt
+              Just code ->
+                let pcode = splitLines code
+                    line0 = if null pcode then "" else head pcode
+                    line1 = if length pcode > 1 then formatTemplate (pcode !! 1) [value] else ""
+                in addCodeInt (pidFromText pidTxt) line0 line1 value rt
+        else
+          let pname = name <> "_FPTR"
+          in case lookupRef pname rt of
+              Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " PTR(field): no refinement for '" <> pname <> "'"] rt
+              Just code ->
+                let pcode = splitLines code
+                    line0 = if null pcode then "" else head pcode
+                    line1 = if length pcode > 1 then formatTemplate (pcode !! 1) [rtInName rt, value] else ""
+                in addCodeInt (pidFromText pidTxt) line0 line1 value rt
+
+    pidTxt:"CALL":name:args ->
+      case lookupRef name rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CALL: no refinement entry for '" <> name <> "'"] rt
+        Just code ->
+          if length args > 6
+            then addCode (pidFromText pidTxt) [rtEOLC rt <> " CALL: can't handle > 6 arguments"] rt
+            else
+              let callCode = if null args then code else formatTemplate code args
+              in addCode (pidFromText pidTxt) (splitLines callCode) rt
+
+    _pidTxt:"STRUCT":name:[] ->
+      rt { rtInSTRUCT = True, rtInName = name }
+
+    _pidTxt:"SEQ":name:[] ->
+      rt { rtInSEQ = True, rtSeqForSEQ = "", rtInName = name }
+
+    pidTxt:"END":name:[] ->
+      let pid = pidFromText pidTxt
+          rt1 = if rtInSTRUCT rt then rt { rtInSTRUCT = False } else rt
+          rt2 =
+            if rtInSEQ rt1
+              then
+                let seqName = name <> "_SEQ"
+                in case lookupRef seqName rt1 of
+                    Nothing -> addCode pid ["SEQ END: no refinement for "] rt1
+                    Just code ->
+                      L.foldl'
+                        (\acc line0 -> addCode pid [formatTemplate line0 [rtSeqForSEQ rt1]] acc)
+                        rt1
+                        (splitLines code)
+              else rt1
+          rt3 =
+            if rtInSEQ rt1
+              then rt2 { rtInSEQ = False, rtSeqForSEQ = "" }
+              else rt2
+      in rt3 { rtInName = "" }
+
+    _pidTxt:"SCALAR":"_":value:[] ->
+      rt { rtSeqForSEQ = rtSeqForSEQ rt <> " " <> value }
+
+    pidTxt:"SCALAR":name:value:[] ->
+      if not (rtInSTRUCT rt)
+        then
+          case lookupRef name rt of
+            Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR: no refinement entry for '" <> name <> "'"] rt
+            Just code -> addCode (pidFromText pidTxt) (splitLines (formatTemplate code [value])) rt
+        else
+          let field = name <> "_FSCALAR"
+          in case lookupRef field rt of
+              Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR(field): no refinement entry for '" <> field <> "'"] rt
+              Just code -> addCode (pidFromText pidTxt) [formatTemplate code [rtInName rt, value]] rt
+
+    pidTxt:"SCALAR":name:index:value:[] ->
+      if not (rtInSTRUCT rt)
+        then
+          case lookupRef name rt of
+            Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR-3: no refinement entry for '" <> name <> "'"] rt
+            Just code -> addCode (pidFromText pidTxt) (splitLines (formatTemplate code [index, value])) rt
+        else
+          let field = name <> "_FSCALAR"
+          in case lookupRef field rt of
+              Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR(field): no refinement entry for '" <> field <> "'"] rt
+              Just code -> addCode (pidFromText pidTxt) [formatTemplate code [rtInName rt, value]] rt
+
+    pidTxt:"STATE":tid:stateName:[] ->
+      case lookupRef stateName rt of
+        Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " STATE: no refinement entry for '" <> stateName <> "'"] rt
+        Just code -> addCode (pidFromText pidTxt) [formatTemplate code [tid]] rt
+
+    pidTxt:hd:_rest ->
+      addCode (pidFromText pidTxt) [rtEOLC rt <> "  DON'T KNOW HOW TO REFINE: " <> pidTxt <> " '" <> hd] rt
+
+    [pidTxt] ->
+      addCode (pidFromText pidTxt) [rtEOLC rt <> "  DON'T KNOW HOW TO REFINE: " <> pidTxt] rt
+
+    _ -> rt
+
+refineSPINLineMain :: [Text] -> RuntimeState -> RuntimeState
+refineSPINLineMain ln rt0 =
+  let rt1 = collectPIdsTokens ln rt0
+      rt2 = if outputSWITCH (rtFlags rt1) then switchIfRequired ln rt1 else rt1
+      rt3 = if annoteComments (rtFlags rt2) then logSPINLine ln rt2 else rt2
+  in refineSPINLine ln rt3
+
+renderTestBody :: RuntimeState -> Text
+renderTestBody rt =
+  let header = "\n" <> rtEOLC rt <> "  ===============================================\n\n"
+      defSection = T.concat [line <> "\n" | line <- rtDefCode rt]
+      declSection = T.concat [line <> "\n" | line <- rtDeclCode rt]
+      sortedCodes = L.sortOn fst (rtTestCodes rt)
+      groups = L.groupBy (\a b -> fst a == fst b) sortedCodes
+      segmentText = T.concat (map (renderSegment rt) groups)
+      footer = "\n" <> rtEOLC rt <> "  ===============================================\n\n"
+  in header <> defSection <> declSection <> segmentText <> footer
+  where
+    renderSegment _ [] = ""
+    renderSegment st grp =
+      let sno = fst (head grp)
+          segName = formatTemplate (rtSegNamePfx st) [tshow sno]
+          segDecl = formatTemplate (rtSegDecl st) [segName, rtSegArg st]
+          bodyLines =
+            T.concat
+              [ T.concat ["  ", line, "\n"]
+              | (_pid, lines0) <- grp
+              , line <- lines0
+              ]
+      in "\n"
+         <> rtEOLC st <> "  ===== TEST CODE SEGMENT " <> tshow sno <> " =====\n\n"
+         <> segDecl <> rtSegBegin st <> "\n"
+         <> bodyLines
+         <> rtSegEnd st <> "\n"
+
+formatPidSet :: [Int] -> String
+formatPidSet pids =
+  L.intercalate "," (map show (L.sort pids))
+
+parseCollectPidCommand :: Text -> Maybe Int
+parseCollectPidCommand line =
+  let prefix = "COMMAND:collectPIds:"
+  in if prefix `T.isPrefixOf` line
+       then
+         case TR.decimal (T.drop (T.length prefix) line) of
+           Right (pid, rest) | T.null rest -> Just pid
+           _ -> Nothing
+       else Nothing
+
+parseRefineLineCommand :: Text -> Maybe [Text]
+parseRefineLineCommand line =
+  let prefix = "COMMAND:refineSPINLine:"
+  in if prefix `T.isPrefixOf` line
+       then
+         let payload = T.drop (T.length prefix) line
+         in A.decode (BL.pack (T.unpack payload))
+       else Nothing
+
+handleInitCommand :: Session -> Text -> IO Session
+handleInitCommand session line = do
+  let payload = T.drop (T.length ("INIT JSON:" :: Text)) line
+  case A.decode (BL.pack (T.unpack payload)) :: Maybe InputConfig of
+    Nothing -> do
+      putStrLn "RESPONSE:FAILED:Failed to parse JSON as Config"
+      pure session
+    Just config -> do
+      initRes <- initRuntime config
+      case initRes of
         Left err -> do
-          print err
-          exitWith (ExitFailure 1)
-        Right parsed -> do
-          if T.null (eolc parsed) || T.null (cmtbegin parsed) || T.null (cmtend parsed)
-            then do
-              S.putStrLn $ "Missing required comment keys in " ++ filename
-              exitWith (ExitFailure 1)
-            else do
-              return parsed
-    else if Data.List.map Data.Char.toLower language /= "c"
-      then do
-        S.putStrLn $ "Unknown LANGUAGE " ++ language ++ " set to C\n"
-        setupComments "c"
-      else do
-        S.putStrLn $ "Ensure language file for " ++ language ++ 
-                     " is present before generating tests (comments)"
-        S.putStrLn $ "File " ++ filename ++ " not found\n"
-        exitWith (ExitFailure 1)
+          putStrLn ("RESPONSE:FAILED:" ++ err)
+          pure session
+        Right rt -> do
+          putStrLn "RESPONSE:SUCCESS:INIT JSON received"
+          pure session { ssRuntime = Just rt }
 
-setDefaults :: String -> IO DefaultCodes 
-setDefaults language = do
-    S.putStrLn $ "Set LANGUAGE to " ++ language ++ " (non-comment defaults)\n"
-    let filename = "../../src/src/languages/" ++ Data.List.map Data.Char.toLower language ++ ".yml"
-    
-    exists <- doesFileExist filename
-    
-    if exists 
-        then do
-            result <- decodeFileEither filename :: IO (Either ParseException DefaultCodes)
-            case result of
-                Left err -> do
-                    print err
-                    exitWith (ExitFailure 1)
-                Right parsed -> do
-                    return parsed
-        else if Data.List.map Data.Char.toLower language /= "c"
-            then do
-                S.putStrLn $ "Unknown LANGUAGE " ++ language ++ ", set to C\n"
-                setDefaults "c"
-            else do
-                S.putStrLn $ "Ensure language file for " ++ language ++ 
-                           " is present before generating tests (non-comment defaults)\n"
-                S.putStrLn $ "File " ++ filename ++ " not found\n"
-                exitWith (ExitFailure 1)
+handleSetupLanguageCommand :: Session -> IO Session
+handleSetupLanguageCommand session =
+  case ssRuntime session of
+    Nothing -> do
+      putStrLn "RESPONSE:FAILED:No config initialized"
+      pure session
+    Just rt -> do
+      res <- setupLanguageRuntime rt
+      case res of
+        Left err -> do
+          putStrLn ("RESPONSE:FAILED:" ++ err)
+          pure session
+        Right rt' -> do
+          putStrLn "RESPONSE:SUCCESS:setupLanguage worked"
+          pure session { ssRuntime = Just rt' }
 
--- NEW: setupSegmentCode function
--- Logic: Uses RefDict values if present (Haskell types are strict, so they are present).
--- If we needed to support missing keys (falling back to defaults), RefDict fields would need to be Maybe.
-setupSegmentCode :: RefDict -> DefaultCodes -> IO SegmentCodes
-setupSegmentCode refDict defaults = do
-    -- In Python: if key in ref_dict_keys -> use ref_dict, else use default
-    -- Here we extract from RefDict.
-    
-    let pfx = segnamepfx refDict
-        arg = segarg refDict
-        decl = segdecl refDict
-        begin = segbegin refDict
-        end = segend refDict
+handleCollectPIdsCommand :: Session -> Text -> IO Session
+handleCollectPIdsCommand session line =
+  case ssRuntime session of
+    Nothing -> do
+      putStrLn "RESPONSE:FAILED:No config initialized"
+      pure session
+    Just rt ->
+      case parseCollectPidCommand line of
+        Nothing -> do
+          putStrLn "RESPONSE:FAILED:Invalid collectPIds command"
+          pure session
+        Just pid -> do
+          let rt' = rt { rtProcIds = addUniquePid pid (rtProcIds rt) }
+          putStrLn ("RESPONSE:SUCCESS:collectPIds:" ++ formatPidSet (rtProcIds rt'))
+          pure session { ssRuntime = Just rt' }
 
-    -- Debug logging
-    S.putStrLn $ "SEGNAMEPFX is '" ++ T.unpack pfx ++ "'"
-    S.putStrLn $ "SEGARG is '" ++ T.unpack arg ++ "'"
-    S.putStrLn $ "SEGDECL is '" ++ T.unpack decl ++ "'"
-    S.putStrLn $ "SEGBEGIN is '" ++ T.unpack begin ++ "'"
-    S.putStrLn $ "SEGEND is '" ++ T.unpack end ++ "'"
+handleRefineSPINLineCommand :: Session -> Text -> IO Session
+handleRefineSPINLineCommand session line =
+  case ssRuntime session of
+    Nothing -> do
+      putStrLn "RESPONSE:FAILED:No config initialized"
+      pure session
+    Just rt ->
+      case parseRefineLineCommand line of
+        Nothing -> do
+          putStrLn "RESPONSE:FAILED:Invalid refineSPINLine command"
+          pure session
+        Just tokens -> do
+          let rt' = refineSPINLineMain tokens rt
+          putStrLn "RESPONSE:SUCCESS:refineSPINLine"
+          pure session { ssRuntime = Just rt' }
 
-    return $ SegmentCodes pfx arg decl begin end
+handleTestBodyCommand :: Session -> IO Session
+handleTestBodyCommand session =
+  case ssRuntime session of
+    Nothing -> do
+      putStrLn "RESPONSE:FAILED:No config initialized"
+      pure session
+    Just rt -> do
+      putStrLn "RESPONSE:SUCCESS:testBody:BEGIN"
+      putStrLn (T.unpack (renderTestBody rt))
+      putStrLn "RESPONSE:SUCCESS:testBody:END"
+      pure session
 
--- UPDATED: setupLanguage now returns SegmentCodes as well
-setupLanguage :: RefDict -> IO (CommentCodes, DefaultCodes, SegmentCodes)
-setupLanguage refdict = do
-    let langText = language refdict
-        lowerLang = T.unpack $ T.map Data.Char.toLower langText
-    
-    commentCodes <- setupComments lowerLang
-    defaultCodes <- setDefaults lowerLang
-    
-    -- Call setupSegmentCode
-    segmentCodes <- setupSegmentCode refdict defaultCodes
-    
-    return (commentCodes, defaultCodes, segmentCodes)
+handleLine :: Session -> Text -> IO Session
+handleLine session line
+  | "INIT JSON:" `T.isPrefixOf` line = handleInitCommand session line
+  | line == "COMMAND:setupLanguage" = handleSetupLanguageCommand session
+  | "COMMAND:collectPIds:" `T.isPrefixOf` line = handleCollectPIdsCommand session line
+  | "COMMAND:refineSPINLine:" `T.isPrefixOf` line = handleRefineSPINLineCommand session line
+  | line == "COMMAND:testBody" = handleTestBodyCommand session
+  | otherwise = do
+      putStrLn ("DEBUG: Unknown command: " ++ T.unpack (T.take 80 line))
+      putStrLn "RESPONSE:FAILED:Unknown command"
+      pure session
 
-parseConfig :: String -> Maybe Main.Config
-parseConfig line =
-    let jsonStr = Data.List.drop 10 line
-    in A.decode (B.pack jsonStr)
-
-
-
-collectPIds procIds spinline = 
-    if not(Data.List.null spinline)
-      then procIds ++ Data.List.head(read spinline)
-    else procIds
-
-addCode testCodes id codelines =
-    testCodes ++ [(read id, codelines)]
-
-addCodeInt pid f_codelines0 f_codelines1 value =
-
-    if value == "0" && Data.List.all isDigit value
-            then addCode pid f_codelines0
-          else addCode pid f_codelines1
-  
-    
+commandLoop :: Session -> IO ()
+commandLoop session = do
+  eof <- hIsEOF stdin
+  if eof
+    then putStrLn "DEBUG: EOF reached, exiting"
+    else do
+      line <- getLine
+      next <- handleLine session (T.pack line)
+      commandLoop next
 
 main :: IO ()
 main = do
-  --runTests
   hSetBuffering stdout LineBuffering
-  currentDir <- getCurrentDirectory
-  S.putStrLn $ "Haskell: Started in directory: " ++ currentDir
-  S.putStrLn "Haskell: Started - WITH EOF HANDLING"
-
-  let loop = do
-        eof <- hIsEOF stdin
-        if eof
-          then S.putStrLn "DEBUG: EOF reached, exiting"
-          else do
-            line <- getLine
-
-            if "INIT JSON:" `Data.List.isPrefixOf` line
-              then do
-                S.putStrLn "DEBUG: Processing INIT JSON command"
-
-                case parseConfig line of
-                    Nothing -> do
-                        S.putStrLn "Failed to parse JSON as Config"
-                        case (A.decode (B.pack (Data.List.drop 10 line)) :: Maybe A.Value) of
-                            Nothing -> S.putStrLn "Failed to parse JSON at all"
-                            Just jsonValue -> do
-                                S.putStrLn "=== Generic JSON (not Config) ==="
-                                B.putStrLn $ A.encode jsonValue
-                        loop
-
-                    Just config -> do
-                        S.putStrLn "=== Successfully parsed as Config ==="
-                        S.putStrLn $ "Language: " ++ T.unpack (language (ref_dict config))
-                        
-                        -- UPDATED: Capture the new return values from setupLanguage
-                        (cmtCodes, defCodes, segCodes) <- setupLanguage (ref_dict config)
-                        
-                        -- Example of accessing the resolved SegmentCodes
-                        S.putStrLn $ "Resolved Segment Prefix: " ++ T.unpack (scNamePfx segCodes)
-                        
-                        S.putStrLn $ "Segment Prefix (Raw RefDict): " ++ T.unpack (segnamepfx (ref_dict config))
-                        S.putStrLn $ "outputLOG: " ++ Prelude.show (outputLOG (flags config))
-
-                        S.putStrLn "RESPONSE:SUCCESS:INIT JSON received"
-                        loop
-
-              else if line == "COMMAND:setupLanguage"
-                then do
-                  S.putStrLn "RESPONSE:SUCCESS:setupLanguage worked"
-                  loop
-                else do
-                  S.putStrLn $ "DEBUG: Unknown command: " ++ Data.List.take 50 line
-                  S.putStrLn "RESPONSE:FAILED:Unknown command"
-                  loop
-
-  loop
-
---- ============================================
--- TESTS AT THE BOTTOM OF THE FILE
--- ============================================
-
--- Helper to run tests
-
-runTests :: IO ()
-runTests = do
-  -- Use $ to ensure the string calculation happens before putStrLn
-  S.putStrLn $ "\n" ++ Data.List.replicate 60 '='
-  S.putStrLn "RUNNING TESTS"
-  S.putStrLn $ Data.List.replicate 60 '=' ++ "\n"
-  
-  -- Test 1: Field mapping
-  S.putStrLn "Test 1: Field mapping"
-  S.putStrLn $ "  fieldToJSON 'language' = '" ++ fieldToJSON "language" ++ "'"
-  S.putStrLn $ "  Expected: 'LANGUAGE'"
-  S.putStrLn $ "  " ++ if fieldToJSON "language" == "LANGUAGE" then "✓ PASS" else "✗ FAIL"
-  
-  S.putStrLn $ "  fieldToJSON 'segnamepfx' = '" ++ fieldToJSON "segnamepfx" ++ "'"
-  S.putStrLn $ "  Expected: 'SEGNAMEPFX'"
-  S.putStrLn $ "  " ++ if fieldToJSON "segnamepfx" == "SEGNAMEPFX" then "✓ PASS" else "✗ FAIL"
-  
-  S.putStrLn $ "  fieldToJSON 'runner' = '" ++ fieldToJSON "runner" ++ "'"
-  S.putStrLn $ "  Expected: 'Runner'"
-  S.putStrLn $ "  " ++ if fieldToJSON "runner" == "Runner" then "✓ PASS" else "✗ FAIL"
-  
-  -- Test 2: JSON parsing
-  let fullTestJSON = Data.List.concat
-        [ "{\"ref_dict\": {"
-        , "\"LANGUAGE\": \"C\","
-        , "\"SEGNAMEPFX\": \"Seg\","
-        , "\"SEGARG\": \"Arg\","
-        , "\"SEGDECL\": \"Decl\","
-        , "\"SEGBEGIN\": \"Begin\","
-        , "\"SEGEND\": \"End\","
-        , "\"NAME\": \"Name\","
-        , "\"pending_DCL\": \"pdcl\","
-        , "\"semaphore_DCL\": \"sdcl\","
-        , "\"sc_DCL\": \"scdcl\","
-        , "\"prio_DCL\": \"pdcl\","
-        , "\"createRC_DCL\": \"crdcl\","
-        , "\"startRC_DCL\": \"srdcl\","
-        , "\"deleteRC_DCL\": \"drdcl\","
-        , "\"suspendRC_DCL\": \"sudcl\","
-        , "\"isSuspendRC_DCL\": \"isdcl\","
-        , "\"resumeRC_DCL\": \"rmdcl\","
-        , "\"setPriorityRC_DCL\": \"spdcl\","
-        , "\"priority_DCL\": \"prdcl\","
-        , "\"taskID_DCL\": \"tidcl\","
-        , "\"tasks_DCL\": \"tdcl\","
-        , "\"INIT\": \"init\","
-        , "\"TASK_INIT\": \"taskInit\","
-        , "\"Runner\": \"runner\","
-        , "\"Worker\": \"worker\","
-        , "\"SIGNAL\": \"signal\","
-        , "\"WAIT\": \"wait\","
-        , "\"task_create\": \"create\","
-        , "\"task_start\": \"start\","
-        , "\"task_delete\": \"delete\","
-        , "\"task_suspend\": \"suspend\","
-        , "\"task_isSuspended\": \"isSuspended\","
-        , "\"task_resume\": \"resume\","
-        , "\"task_setPriority\": \"setPrio\","
-        , "\"createRC\": \"crc\","
-        , "\"startRC\": \"src\","
-        , "\"delRC\": \"drc\","
-        , "\"suspendRC\": \"surc\","
-        , "\"isSuspendRC\": \"isrc\","
-        , "\"resumeRC\": \"rerc\","
-        , "\"setPriorityRC\": \"sprc\","
-        , "\"oldPrio\": \"oldPrio\","
-        , "\"WaitForSuspend\": \"wfs\","
-        , "\"TooMany\": \"tm\","
-        , "\"Ready\": \"rdy\","
-        , "\"Zombie\": \"zb\","
-        , "\"EventWait\": \"ew\","
-        , "\"TimeWait\": \"tw\","
-        , "\"OtherWait\": \"ow\","
-        , "\"SUSPEND\": \"susp\","
-        , "\"WAKEUP\": \"wake\","
-        , "\"LowerPriority\": \"lp\","
-        , "\"EqualPriority\": \"ep\","
-        , "\"HigherPriority\": \"hp\","
-        , "\"StartLog\": \"sl\","
-        , "\"CheckPreemption\": \"cp\","
-        , "\"CheckNoPreemption\": \"cnp\","
-        , "\"RunnerScheduler\": \"rs\","
-        , "\"OtherScheduler\": \"os\","
-        , "\"SetProcessor\": \"sp\""
-        , "}, \"flags\": {"
-        , "\"outputLOG\": true,"
-        , "\"annoteComments\": false,"
-        , "\"outputSWITCH\": true"
-        , "}}"
-        ]
-      testInput = "INIT JSON:" ++ fullTestJSON
-  
-  S.putStrLn "\nTest 2: JSON parsing"
-  case parseConfig testInput of
-    Nothing -> S.putStrLn "  ✗ FAIL: Could not parse JSON"
-    Just config -> do
-      S.putStrLn "  ✓ PASS: JSON parsed successfully"
-      S.putStrLn $ "  Language = " ++ T.unpack (language (ref_dict config))
-      S.putStrLn $ "  outputLOG = " ++ Prelude.show (outputLOG (flags config))
-  
-  -- Test 3: commentFieldToJSON
-  S.putStrLn "\nTest 3: Comment field mapping"
-  S.putStrLn $ "  commentFieldToJSON 'eolc' = '" ++ commentFieldToJSON "eolc" ++ "'"
-  S.putStrLn $ "  Expected: 'EOLC'"
-  S.putStrLn $ "  " ++ if commentFieldToJSON "eolc" == "EOLC" then "✓ PASS" else "✗ FAIL"
-  
-  S.putStrLn $ "\n" ++ Data.List.replicate 60 '='
-  S.putStrLn "TESTS COMPLETE"
-  S.putStrLn $ Data.List.replicate 60 '=' ++ "\n"
-
--- Quick property tests
-quickPropertyTests :: IO ()
-quickPropertyTests = do
-  S.putStrLn "\nQuick Property Tests:"
-  
-  -- Property: fieldToJSON never returns empty string
-  let testFields = ["language", "segnamepfx", "runner", "unknown", ""]
-      allNonEmpty = Data.List.all (not . Data.List.null . fieldToJSON) testFields
-  S.putStrLn $ "  Property: fieldToJSON never returns empty: "
-           ++ if allNonEmpty then "✓ PASS" else "✗ FAIL"
-  
-  -- Property: commentFieldToJSON returns uppercase
-  let commentFields = ["eolc", "cmtbegin", "cmtend"]
-      allUppercase = Data.List.all (\f -> Data.List.all isUpper (commentFieldToJSON f)) commentFields
-  S.putStrLn $ "  Property: commentFieldToJSON returns uppercase: "
-           ++ if allUppercase then "✓ PASS" else "✗ FAIL"
-
--- Individual test functions you can call from GHCi
-test_fieldMapping :: IO ()
-test_fieldMapping = do
-  S.putStrLn "Testing field mapping..."
-  let testCases = 
-        [ ("language", "LANGUAGE")
-        , ("segnamepfx", "SEGNAMEPFX")
-        , ("segarg", "SEGARG")
-        , ("runner", "Runner")
-        , ("worker", "Worker")
-        , ("pending_DCL", "pending_DCL")
-        , ("unknown", "unknown")
-        ]
-  
-  mapM_ (\(input, expected) -> do
-    let result = fieldToJSON input
-    S.putStrLn $ "  " ++ input ++ " -> " ++ result
-    if result == expected
-      then S.putStrLn "    ✓ PASS"
-      else S.putStrLn $ "    ✗ FAIL (expected " ++ expected ++ ")"
-    ) testCases
-test_jsonParsing :: IO ()
-test_jsonParsing = do
-  S.putStrLn "Testing JSON parsing..."
-  
-  -- Fix: Use Data.List.concat for String lists, instead of T.concat
-  let fullTestJSON = Data.List.concat
-        [ "{\"ref_dict\": {"
-        , "\"LANGUAGE\": \"C\","
-        , "\"SEGNAMEPFX\": \"Seg\","
-        , "\"SEGARG\": \"Arg\","
-        , "\"SEGDECL\": \"Decl\","
-        , "\"SEGBEGIN\": \"Begin\","
-        , "\"SEGEND\": \"End\","
-        , "\"NAME\": \"Name\","
-        , "\"pending_DCL\": \"pdcl\","
-        , "\"semaphore_DCL\": \"sdcl\","
-        , "\"sc_DCL\": \"scdcl\","
-        , "\"prio_DCL\": \"pdcl\","
-        , "\"createRC_DCL\": \"crdcl\","
-        , "\"startRC_DCL\": \"srdcl\","
-        , "\"deleteRC_DCL\": \"drdcl\","
-        , "\"suspendRC_DCL\": \"sudcl\","
-        , "\"isSuspendRC_DCL\": \"isdcl\","
-        , "\"resumeRC_DCL\": \"rmdcl\","
-        , "\"setPriorityRC_DCL\": \"spdcl\","
-        , "\"priority_DCL\": \"prdcl\","
-        , "\"taskID_DCL\": \"tidcl\","
-        , "\"tasks_DCL\": \"tdcl\","
-        , "\"INIT\": \"init\","
-        , "\"TASK_INIT\": \"taskInit\","
-        , "\"Runner\": \"runner\","
-        , "\"Worker\": \"worker\","
-        , "\"SIGNAL\": \"signal\","
-        , "\"WAIT\": \"wait\","
-        , "\"task_create\": \"create\","
-        , "\"task_start\": \"start\","
-        , "\"task_delete\": \"delete\","
-        , "\"task_suspend\": \"suspend\","
-        , "\"task_isSuspended\": \"isSuspended\","
-        , "\"task_resume\": \"resume\","
-        , "\"task_setPriority\": \"setPrio\","
-        , "\"createRC\": \"crc\","
-        , "\"startRC\": \"src\","
-        , "\"delRC\": \"drc\","
-        , "\"suspendRC\": \"surc\","
-        , "\"isSuspendRC\": \"isrc\","
-        , "\"resumeRC\": \"rerc\","
-        , "\"setPriorityRC\": \"sprc\","
-        , "\"oldPrio\": \"oldPrio\","
-        , "\"WaitForSuspend\": \"wfs\","
-        , "\"TooMany\": \"tm\","
-        , "\"Ready\": \"rdy\","
-        , "\"Zombie\": \"zb\","
-        , "\"EventWait\": \"ew\","
-        , "\"TimeWait\": \"tw\","
-        , "\"OtherWait\": \"ow\","
-        , "\"SUSPEND\": \"susp\","
-        , "\"WAKEUP\": \"wake\","
-        , "\"LowerPriority\": \"lp\","
-        , "\"EqualPriority\": \"ep\","
-        , "\"HigherPriority\": \"hp\","
-        , "\"StartLog\": \"sl\","
-        , "\"CheckPreemption\": \"cp\","
-        , "\"CheckNoPreemption\": \"cnp\","
-        , "\"RunnerScheduler\": \"rs\","
-        , "\"OtherScheduler\": \"os\","
-        , "\"SetProcessor\": \"sp\""
-        , "}, \"flags\": {"
-        , "\"outputLOG\": true,"
-        , "\"annoteComments\": false,"
-        , "\"outputSWITCH\": true"
-        , "}}"
-        ]
-
-  case parseConfig ("INIT JSON:" ++ fullTestJSON) of
-    Nothing -> S.putStrLn "  ✗ FAIL: Could not parse valid JSON (Check if all fields are present)"
-    Just config -> do
-      S.putStrLn "  ✓ PASS: Parsed valid JSON"
-      S.putStrLn $ "    Language = " ++ T.unpack (language (ref_dict config))
-      S.putStrLn $ "    Segment prefix = " ++ T.unpack (segnamepfx (ref_dict config))
-      S.putStrLn $ "    outputLOG = " ++ Prelude.show (outputLOG (flags config))
-  
-  -- Test case 2: Invalid JSON
-  case parseConfig "INIT JSON:{invalid json}" of
-    Nothing -> S.putStrLn "  ✓ PASS: Correctly rejected invalid JSON"
-    Just _ -> S.putStrLn "  ✗ FAIL: Should have rejected invalid JSON"
+  hSetBuffering stdin LineBuffering
+  cwd <- getCurrentDirectory
+  putStrLn ("Haskell: Started in directory: " ++ cwd)
+  putStrLn "Haskell: Started - WITH EOF HANDLING"
+  commandLoop (Session Nothing)
