@@ -1,16 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
--- This executable is the Haskell implementation of the SPIN-line refiner.
--- It runs as a long-lived subprocess and receives text commands from Python
--- (`combined_haskell_bridge.py`). Every command updates an in-memory
--- `RuntimeState` and replies with a line-based SUCCESS/FAILED response.
---
--- High-level lifecycle:
--- 1) Python sends `INIT JSON:{...}` with language map + flags.
--- 2) Python sends many `COMMAND:refineSPINLine:[...]` calls.
--- 3) Python sends `COMMAND:testBody` to receive rendered C body text.
-
 import qualified Data.Aeson as A
 import Data.Aeson ((.:), (.:?))
 import qualified Data.Aeson.Key as K
@@ -24,71 +14,51 @@ import qualified Data.Text as T
 import Data.Text (Text)
 import qualified Data.Text.Read as TR
 import qualified Data.Yaml as Y
-import System.Directory (doesFileExist, getCurrentDirectory)
+import System.Directory (doesFileExist)
 import System.Environment (getExecutablePath)
+import System.Exit (exitFailure)
 import System.IO (hIsEOF, hSetBuffering, BufferMode(LineBuffering), stdin, stdout)
 
--- `RefDict` holds YAML refinement entries such as:
--- "SIGNAL" -> "Wakeup( semaphore[{0}] );"
--- "SEGDECL" -> "static void {}( {} )"
---
--- We keep this as a simple association list to stay close to the original
--- Python representation and lookup behavior.
 type RefDict = [(Text, Text)]
 
--- Runtime flags copied from Python constructor options.
 data Flags = Flags
   { outputLOG :: Bool
   , annoteComments :: Bool
   , outputSWITCH :: Bool
   } deriving (Show)
 
--- Parsed content of `INIT JSON:{...}`.
 data InputConfig = InputConfig
   { icRefDict :: RefDict
   , icFlags :: Flags
   } deriving (Show)
 
--- Complete mutable-style state threaded through pure functions.
--- `rt*` prefixes mirror prior Python instance fields.
 data RuntimeState = RuntimeState
-  { rtRefDict :: RefDict          -- Active template dictionary.
-  , rtFlags :: Flags              -- Runtime toggle flags.
-  , rtInSTRUCT :: Bool            -- True while between STRUCT ... END.
-  , rtInSEQ :: Bool               -- True while between SEQ ... END.
-  , rtSeqForSEQ :: Text           -- Accumulated SEQ scalar payload.
-  , rtInName :: Text              -- Current STRUCT/SEQ symbolic name.
-  , rtTestName :: Text            -- Reserved test-name field.
-  , rtDefCode :: [Text]           -- Global #define / header text.
-  , rtDeclCode :: [Text]          -- Global static declarations.
-  , rtTestCodes :: [(Int, [Text])]-- Per-pid generated code fragments.
-  , rtProcIds :: [Int]            -- Collected participant process IDs.
-  , rtCurrentId :: Int            -- PID currently considered "running".
-  , rtSwitchNo :: Int             -- Monotonic switch event counter.
-  , rtEOLC :: Text                -- Language-specific end-of-line comment.
-  , rtCMTBEGIN :: Text            -- Block-comment begin marker.
-  , rtCMTEND :: Text              -- Block-comment end marker.
-  , rtSegNamePfx :: Text          -- Template: segment function name.
-  , rtSegArg :: Text              -- Template: segment argument list.
-  , rtSegDecl :: Text             -- Template: segment declaration.
-  , rtSegBegin :: Text            -- Template: segment body opener.
-  , rtSegEnd :: Text              -- Template: segment body closer.
+  { rtRefDict :: RefDict
+  , rtFlags :: Flags
+  , rtInSTRUCT :: Bool
+  , rtInSEQ :: Bool
+  , rtSeqForSEQ :: Text
+  , rtInName :: Text
+  , rtDefCode :: [Text]
+  , rtDeclCode :: [Text]
+  , rtTestCodes :: [(Int, [Text])]
+  , rtProcIds :: [Int]
+  , rtCurrentId :: Int
+  , rtSwitchNo :: Int
+  , rtEOLC :: Text
+  , rtSegNamePfx :: Text
+  , rtSegArg :: Text
+  , rtSegDecl :: Text
+  , rtSegBegin :: Text
+  , rtSegEnd :: Text
   } deriving (Show)
 
--- Top-level session wrapper. `Nothing` means INIT has not succeeded yet.
-data Session = Session
-  { ssRuntime :: Maybe RuntimeState
-  }
-
--- JSON parsing for flags with defaults matching Python behavior.
 instance A.FromJSON Flags where
   parseJSON = AT.withObject "Flags" $ \o ->
     Flags <$> o .:? "outputLOG" AT..!= False
           <*> o .:? "annoteComments" AT..!= True
           <*> o .:? "outputSWITCH" AT..!= True
 
--- JSON parsing for INIT payload.
--- `ref_dict` must be a JSON object and is converted to Text -> Text pairs.
 instance A.FromJSON InputConfig where
   parseJSON = AT.withObject "InputConfig" $ \o -> do
     refVal <- o .: "ref_dict"
@@ -98,13 +68,10 @@ instance A.FromJSON InputConfig where
       _ -> fail "ref_dict must be an object"
     pure $ InputConfig refDict flags
 
--- Convert Aeson key map to our simple `RefDict` list format.
 keyMapToRefDict :: KM.KeyMap A.Value -> RefDict
 keyMapToRefDict km =
   [ (K.toText k, valueToText v) | (k, v) <- KM.toList km ]
 
--- Convert JSON values to plain text for template expansion.
--- Complex values are JSON-encoded into one compact text field.
 valueToText :: A.Value -> Text
 valueToText (A.String s) = s
 valueToText (A.Number n) = T.pack (show n)
@@ -113,15 +80,12 @@ valueToText (A.Bool False) = "false"
 valueToText A.Null = ""
 valueToText other = T.pack (BL.unpack (A.encode other))
 
--- Text `show` helper so template code stays `Text` end-to-end.
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
--- Keep behavior identical to Python `.split("\n")`.
 splitLines :: Text -> [Text]
 splitLines = T.splitOn "\n"
 
--- Replace first occurrence only (used for `{}` positional placeholders).
 replaceFirst :: Text -> Text -> Text -> Text
 replaceFirst needle repl txt =
   let (before, after) = T.breakOn needle txt
@@ -129,9 +93,6 @@ replaceFirst needle repl txt =
      then txt
      else before <> repl <> T.drop (T.length needle) after
 
--- Template formatter supporting both indexed (`{0}`) and sequential (`{}`):
--- 1) First replace `{0}`, `{1}`, ... with corresponding args.
--- 2) Then consume remaining bare `{}` left-to-right.
 formatTemplate :: Text -> [Text] -> Text
 formatTemplate template args =
   let indexed = L.foldl'
@@ -140,35 +101,20 @@ formatTemplate template args =
         (zip [0 :: Int ..] args)
   in L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
 
--- Discover `languages/<name>.yml` in common runtime locations.
--- We search relative to executable path and working directory so this works
--- both in-tree and from built artifacts.
 findLanguageFile :: String -> IO (Maybe FilePath)
 findLanguageFile lang = do
   exePath <- getExecutablePath
-  cwd <- getCurrentDirectory
-  let exeDir = dirname exePath
+  let dir = dirname exePath
       fileName = L.map toLower lang ++ ".yml"
-      candidates =
-        [ exeDir ++ "/languages/" ++ fileName
-        , cwd ++ "/languages/" ++ fileName
-        , cwd ++ "/src/languages/" ++ fileName
-        , cwd ++ "/src/src/languages/" ++ fileName
-        , cwd ++ "/../languages/" ++ fileName
-        , cwd ++ "/../src/languages/" ++ fileName
-        ]
-  firstExisting candidates
+      path = dir ++ "/languages/" ++ fileName
+  exists <- doesFileExist path
+  pure (if exists then Just path else Nothing)
   where
     dirname p =
       case L.elemIndices '/' p of
         [] -> "."
         xs -> L.take (L.last xs) p
-    firstExisting [] = pure Nothing
-    firstExisting (p:ps) = do
-      exists <- doesFileExist p
-      if exists then pure (Just p) else firstExisting ps
 
--- Parse one language YAML file into a lookup map.
 loadLanguageMap :: String -> IO (Either String RefDict)
 loadLanguageMap lang = do
   mfile <- findLanguageFile lang
@@ -181,8 +127,6 @@ loadLanguageMap lang = do
         Right (A.Object obj) -> pure $ Right (keyMapToRefDict obj)
         Right _ -> pure $ Left ("Language file does not contain an object: " ++ path)
 
--- Try requested language; if unavailable and language is not already C, fall
--- back to C templates. This mirrors Python's tolerant startup behavior.
 loadLanguageWithFallback :: String -> IO (Either String RefDict)
 loadLanguageWithFallback lang = do
   res <- loadLanguageMap lang
@@ -193,26 +137,17 @@ loadLanguageWithFallback lang = do
         then loadLanguageMap "c"
         else pure res
 
--- Read mandatory keys from language maps (missing keys are hard failures).
 requireKey :: Text -> RefDict -> Either String Text
 requireKey key m =
   case L.lookup key m of
     Just v -> Right v
     Nothing -> Left ("Missing required key in language YAML: " ++ T.unpack key)
 
--- Update comment delimiters from language map.
 applyCommentsFromMap :: RefDict -> RuntimeState -> Either String RuntimeState
 applyCommentsFromMap m rt = do
   eolc <- requireKey "EOLC" m
-  cmtbegin <- requireKey "CMTBEGIN" m
-  cmtend <- requireKey "CMTEND" m
-  pure rt
-    { rtEOLC = eolc
-    , rtCMTBEGIN = cmtbegin
-    , rtCMTEND = cmtend
-    }
+  pure rt { rtEOLC = eolc }
 
--- Fill optional segment rendering templates from language map.
 applyDefaultsFromMap :: RefDict -> RuntimeState -> RuntimeState
 applyDefaultsFromMap m rt =
   rt
@@ -223,24 +158,10 @@ applyDefaultsFromMap m rt =
     , rtSegEnd = fromMaybe (rtSegEnd rt) (L.lookup "SEGEND" m)
     }
 
--- Re-apply segment rendering keys from `rtRefDict` itself.
--- This mirrors legacy behavior where the runtime map can override defaults.
-setupSegmentCode :: RuntimeState -> RuntimeState
-setupSegmentCode rt =
-  rt
-    { rtSegNamePfx = fromMaybe (rtSegNamePfx rt) (L.lookup "SEGNAMEPFX" (rtRefDict rt))
-    , rtSegArg = fromMaybe (rtSegArg rt) (L.lookup "SEGARG" (rtRefDict rt))
-    , rtSegDecl = fromMaybe (rtSegDecl rt) (L.lookup "SEGDECL" (rtRefDict rt))
-    , rtSegBegin = fromMaybe (rtSegBegin rt) (L.lookup "SEGBEGIN" (rtRefDict rt))
-    , rtSegEnd = fromMaybe (rtSegEnd rt) (L.lookup "SEGEND" (rtRefDict rt))
-    }
-
--- Apply optional LANGUAGE override stored inside the current refinement map.
--- If LANGUAGE is absent, we keep current runtime values unchanged.
 setupLanguageRuntime :: RuntimeState -> IO (Either String RuntimeState)
 setupLanguageRuntime rt =
   case L.lookup "LANGUAGE" (rtRefDict rt) of
-    Nothing -> pure (Right rt) -- Python does nothing when LANGUAGE key is absent
+    Nothing -> pure (Right rt)
     Just langText -> do
       let lang = L.map toLower (T.unpack langText)
       langMapRes <- loadLanguageWithFallback lang
@@ -251,13 +172,9 @@ setupLanguageRuntime rt =
             Left err -> pure (Left err)
             Right rt1 ->
               let rt2 = applyDefaultsFromMap langMap rt1
-                  rt3 = setupSegmentCode rt2
+                  rt3 = applyDefaultsFromMap (rtRefDict rt) rt2
               in pure (Right rt3)
 
--- Build initial runtime:
--- 1) start from hardcoded defaults
--- 2) apply baseline C language templates
--- 3) optionally apply LANGUAGE-specific override
 initRuntime :: InputConfig -> IO (Either String RuntimeState)
 initRuntime (InputConfig refDict flags) = do
   cMapRes <- loadLanguageMap "c"
@@ -268,7 +185,8 @@ initRuntime (InputConfig refDict flags) = do
         Left err -> pure (Left err)
         Right withComments -> do
           let withDefaults = applyDefaultsFromMap cMap withComments
-          setupLanguageRuntime withDefaults
+              withOverrides = applyDefaultsFromMap refDict withDefaults
+          setupLanguageRuntime withOverrides
   where
     baseRuntime =
       RuntimeState
@@ -278,7 +196,6 @@ initRuntime (InputConfig refDict flags) = do
         , rtInSEQ = False
         , rtSeqForSEQ = ""
         , rtInName = ""
-        , rtTestName = "Un-named Test"
         , rtDefCode = []
         , rtDeclCode = []
         , rtTestCodes = []
@@ -286,8 +203,6 @@ initRuntime (InputConfig refDict flags) = do
         , rtCurrentId = 0
         , rtSwitchNo = 0
         , rtEOLC = ""
-        , rtCMTBEGIN = ""
-        , rtCMTEND = ""
         , rtSegNamePfx = "TestSegment{}"
         , rtSegArg = "Context* ctx"
         , rtSegDecl = "static void {}( {} )"
@@ -295,28 +210,22 @@ initRuntime (InputConfig refDict flags) = do
         , rtSegEnd = "}"
         }
 
--- Ref dictionary lookup helper.
 lookupRef :: Text -> RuntimeState -> Maybe Text
 lookupRef key rt = L.lookup key (rtRefDict rt)
 
--- Parse full-text PID (fails if trailing data remains).
 parsePidText :: Text -> Maybe Int
 parsePidText t =
   case TR.decimal t of
     Right (n, rest) | T.null rest -> Just n
     _ -> Nothing
 
--- PID parser with default 0 for malformed input.
 pidFromText :: Text -> Int
 pidFromText = fromMaybe 0 . parsePidText
 
--- Append one generated code chunk to `(pid, [lines])` list.
 addCode :: Int -> [Text] -> RuntimeState -> RuntimeState
 addCode pid lines0 rt =
   rt { rtTestCodes = rtTestCodes rt ++ [(pid, lines0)] }
 
--- Utility for template entries that have two alternatives:
--- if numeric value is 0 choose `line0`, else choose `line1`.
 addCodeInt :: Int -> Text -> Text -> Text -> RuntimeState -> RuntimeState
 addCodeInt pid line0 line1 value rt
   | T.all isDigit value =
@@ -325,13 +234,10 @@ addCodeInt pid line0 line1 value rt
         else addCode pid [line1] rt
   | otherwise = rt
 
--- Insert PID if not yet present, preserving insertion order.
 addUniquePid :: Int -> [Int] -> [Int]
 addUniquePid pid pids =
   if pid `elem` pids then pids else pids ++ [pid]
 
--- Collect PID directly from tokenized SPIN line. This path is used when
--- Python streams full lines through `COMMAND:refineSPINLine`.
 collectPIdsTokens :: [Text] -> RuntimeState -> RuntimeState
 collectPIdsTokens ln rt =
   case ln of
@@ -341,10 +247,6 @@ collectPIdsTokens ln rt =
         Nothing -> rt
     _ -> rt
 
--- Inject synthetic scheduling code when control moves from one PID to another.
--- Output examples come from YAML keys:
--- - SUSPEND: previous PID yields
--- - WAKEUP : next PID resumes
 switchIfRequired :: [Text] -> RuntimeState -> RuntimeState
 switchIfRequired ln rt =
   case ln of
@@ -369,8 +271,6 @@ switchIfRequired ln rt =
               in rt2 { rtCurrentId = pid, rtSwitchNo = nextSwitch }
     _ -> rt
 
--- Add trace comments/logs describing the raw SPIN source line.
--- This is controlled by `annoteComments`.
 logSPINLine :: [Text] -> RuntimeState -> RuntimeState
 logSPINLine ln rt =
   if length ln > 1
@@ -393,41 +293,29 @@ logSPINLine ln rt =
           _ -> addCode pid ["T_log(T_NORMAL,\"@@@ " <> T.unwords ln <> "\");"] rt
     else rt
 
--- Main token-pattern refiner. Each case converts one SPIN instruction form
--- into C code snippets by looking up templates in `rtRefDict`.
---
--- `spinLine` convention:
--- - head token is usually pid
--- - second token is opcode (LOG/DECL/CALL/...)
--- - remaining tokens are opcode arguments
 refineSPINLine :: [Text] -> RuntimeState -> RuntimeState
 refineSPINLine spinLine rt =
   case spinLine of
-    -- Direct log passthrough when outputLOG flag is enabled.
     pidTxt:"LOG":rest ->
       if outputLOG (rtFlags rt)
         then addCode (pidFromText pidTxt) ["T_log(T_NORMAL," <> T.unwords rest <> ");"] rt
         else rt
 
-    -- Test name/header initialization.
     pidTxt:"NAME":_name:[] ->
       case lookupRef "NAME" rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE 'NAME'"] rt
         Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
 
-    -- Global test initialization.
     pidTxt:"INIT":[] ->
       case lookupRef "INIT" rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE 'INIT'"] rt
         Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
 
-    -- Task alias opcodes dispatch directly by taskName key.
     pidTxt:"TASK":taskName:[] ->
       case lookupRef taskName rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE TASK " <> taskName] rt
         Just code -> addCode (pidFromText pidTxt) (splitLines code) rt
 
-    -- Semaphore/event synchronization helpers.
     pidTxt:"SIGNAL":value:[] ->
       case lookupRef "SIGNAL" rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE SIGNAL " <> value] rt
@@ -438,11 +326,9 @@ refineSPINLine spinLine rt =
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CANNOT REFINE WAIT " <> value] rt
         Just code -> addCode (pidFromText pidTxt) (splitLines (formatTemplate code [value])) rt
 
-    -- Macro definitions always go to global definition section.
     _pidTxt:"DEF":name:value:[] ->
       rt { rtDefCode = rtDefCode rt ++ ["#define " <> name <> " " <> value] }
 
-    -- Scalar declaration with optional initializer. Key lookup uses `<name>_DCL`.
     pidTxt:"DECL":_typ:name:rest ->
       let key = name <> "_DCL"
           baseDecl =
@@ -457,7 +343,6 @@ refineSPINLine spinLine rt =
            then rt { rtDeclCode = rtDeclCode rt ++ ["static " <> fullDecl] }
            else addCode (pidFromText pidTxt) [fullDecl] rt
 
-    -- Array declaration. Template receives `[name, value]`.
     pidTxt:"DCLARRAY":_typ:name:value:[] ->
       let key = name <> "_DCL"
           dclLines =
@@ -470,9 +355,6 @@ refineSPINLine spinLine rt =
            then rt { rtDeclCode = rtDeclCode rt ++ dclLines }
            else addCode (pidFromText pidTxt) dclLines rt
 
-    -- Pointer assignment has two modes:
-    -- - normal var pointer (`*_PTR`)
-    -- - struct field pointer (`*_FPTR`) when inside STRUCT block
     pidTxt:"PTR":name:value:[] ->
       if not (rtInSTRUCT rt)
         then
@@ -494,7 +376,6 @@ refineSPINLine spinLine rt =
                     line1 = if length pcode > 1 then formatTemplate (pcode !! 1) [rtInName rt, value] else ""
                 in addCodeInt (pidFromText pidTxt) line0 line1 value rt
 
-    -- General function-style call, with template argument expansion.
     pidTxt:"CALL":name:args ->
       case lookupRef name rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " CALL: no refinement entry for '" <> name <> "'"] rt
@@ -505,15 +386,12 @@ refineSPINLine spinLine rt =
               let callCode = if null args then code else formatTemplate code args
               in addCode (pidFromText pidTxt) (splitLines callCode) rt
 
-    -- Begin STRUCT field-context mode (changes SCALAR/PTR behavior).
     _pidTxt:"STRUCT":name:[] ->
       rt { rtInSTRUCT = True, rtInName = name }
 
-    -- Begin sequence-capture mode. `_` scalars are concatenated until END.
     _pidTxt:"SEQ":name:[] ->
       rt { rtInSEQ = True, rtSeqForSEQ = "", rtInName = name }
 
-    -- End STRUCT or SEQ mode and emit any accumulated SEQ template result.
     pidTxt:"END":name:[] ->
       let pid = pidFromText pidTxt
           rt1 = if rtInSTRUCT rt then rt { rtInSTRUCT = False } else rt
@@ -535,13 +413,9 @@ refineSPINLine spinLine rt =
               else rt2
       in rt3 { rtInName = "" }
 
-    -- Special SEQ accumulation token: SCALAR _ <value>.
     _pidTxt:"SCALAR":"_":value:[] ->
       rt { rtSeqForSEQ = rtSeqForSEQ rt <> " " <> value }
 
-    -- SCALAR with single value:
-    -- - outside STRUCT: use `<name>`
-    -- - inside STRUCT : use `<name>_FSCALAR` with `rtInName` as field owner
     pidTxt:"SCALAR":name:value:[] ->
       if not (rtInSTRUCT rt)
         then
@@ -554,7 +428,6 @@ refineSPINLine spinLine rt =
               Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR(field): no refinement entry for '" <> field <> "'"] rt
               Just code -> addCode (pidFromText pidTxt) [formatTemplate code [rtInName rt, value]] rt
 
-    -- SCALAR with index + value variant.
     pidTxt:"SCALAR":name:index:value:[] ->
       if not (rtInSTRUCT rt)
         then
@@ -567,13 +440,11 @@ refineSPINLine spinLine rt =
               Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " SCALAR(field): no refinement entry for '" <> field <> "'"] rt
               Just code -> addCode (pidFromText pidTxt) [formatTemplate code [rtInName rt, value]] rt
 
-    -- Thread state checks/refinements.
     pidTxt:"STATE":tid:stateName:[] ->
       case lookupRef stateName rt of
         Nothing -> addCode (pidFromText pidTxt) [rtEOLC rt <> " STATE: no refinement entry for '" <> stateName <> "'"] rt
         Just code -> addCode (pidFromText pidTxt) [formatTemplate code [tid]] rt
 
-    -- Catch-all diagnostics for currently unsupported opcodes.
     pidTxt:hd:_rest ->
       addCode (pidFromText pidTxt) [rtEOLC rt <> "  DON'T KNOW HOW TO REFINE: " <> pidTxt <> " '" <> hd] rt
 
@@ -582,11 +453,6 @@ refineSPINLine spinLine rt =
 
     _ -> rt
 
--- Full line-processing pipeline:
--- 1) collect PID
--- 2) optionally insert switch code
--- 3) optionally add comments/log mirrors
--- 4) apply opcode refinement
 refineSPINLineMain :: [Text] -> RuntimeState -> RuntimeState
 refineSPINLineMain ln rt0 =
   let rt1 = collectPIdsTokens ln rt0
@@ -594,8 +460,6 @@ refineSPINLineMain ln rt0 =
       rt3 = if annoteComments (rtFlags rt2) then logSPINLine ln rt2 else rt2
   in refineSPINLine ln rt3
 
--- Render final output sections in deterministic order:
--- definitions, declarations, then grouped test segments by PID.
 renderTestBody :: RuntimeState -> Text
 renderTestBody rt =
   let header = "\n" <> rtEOLC rt <> "  ===============================================\n\n"
@@ -628,143 +492,66 @@ formatPidSet :: [Int] -> String
 formatPidSet pids =
   L.intercalate "," (map show (L.sort pids))
 
--- Parse explicit collectPIds command used by bridge:
--- `COMMAND:collectPIds:<pid>`
-parseCollectPidCommand :: Text -> Maybe Int
-parseCollectPidCommand line =
-  let prefix = "COMMAND:collectPIds:"
-  in if prefix `T.isPrefixOf` line
-       then
-         case TR.decimal (T.drop (T.length prefix) line) of
-           Right (pid, rest) | T.null rest -> Just pid
-           _ -> Nothing
-       else Nothing
+commandLoop :: RuntimeState -> IO ()
+commandLoop rt = do
+  eof <- hIsEOF stdin
+  if eof
+    then pure ()
+    else do
+      line <- getLine
+      rt' <- handleLine rt (T.pack line)
+      commandLoop rt'
 
--- Parse refine command payload:
--- `COMMAND:refineSPINLine:<json-array>`
--- where payload decodes to `[Text]`.
-parseRefineLineCommand :: Text -> Maybe [Text]
-parseRefineLineCommand line =
-  let prefix = "COMMAND:refineSPINLine:"
-  in if prefix `T.isPrefixOf` line
-       then
-         let payload = T.drop (T.length prefix) line
-         in A.decode (BL.pack (T.unpack payload))
-       else Nothing
+handleLine :: RuntimeState -> Text -> IO RuntimeState
+handleLine rt line
+  | line == "COMMAND:setupLanguage" = do
+      res <- setupLanguageRuntime rt
+      case res of
+        Left err -> putStrLn ("RESPONSE:FAILED:" ++ err) >> pure rt
+        Right rt' -> putStrLn "RESPONSE:SUCCESS:setupLanguage" >> pure rt'
+  | "COMMAND:collectPIds:" `T.isPrefixOf` line =
+      let prefix = "COMMAND:collectPIds:"
+          payload = T.drop (T.length prefix) line
+      in case parsePidText payload of
+          Nothing -> putStrLn "RESPONSE:FAILED:Invalid collectPIds" >> pure rt
+          Just pid -> do
+            let rt' = rt { rtProcIds = addUniquePid pid (rtProcIds rt) }
+            putStrLn ("RESPONSE:SUCCESS:collectPIds:" ++ formatPidSet (rtProcIds rt'))
+            pure rt'
+  | "COMMAND:refineSPINLine:" `T.isPrefixOf` line =
+      let prefix = "COMMAND:refineSPINLine:"
+          payload = T.drop (T.length prefix) line
+      in case A.decode (BL.pack (T.unpack payload)) of
+          Nothing -> putStrLn "RESPONSE:FAILED:Invalid refineSPINLine" >> pure rt
+          Just tokens -> do
+            let rt' = refineSPINLineMain tokens rt
+            putStrLn "RESPONSE:SUCCESS:refineSPINLine"
+            pure rt'
+  | line == "COMMAND:testBody" = do
+      putStrLn "RESPONSE:SUCCESS:testBody:BEGIN"
+      putStrLn (T.unpack (renderTestBody rt))
+      putStrLn "RESPONSE:SUCCESS:testBody:END"
+      pure rt
+  | otherwise = do
+      putStrLn "RESPONSE:FAILED:Unknown command"
+      pure rt
 
--- Handle startup INIT and build initial runtime state.
-handleInitCommand :: Session -> Text -> IO Session
-handleInitCommand session line = do
-  let payload = T.drop (T.length ("INIT JSON:" :: Text)) line
+main :: IO ()
+main = do
+  hSetBuffering stdout LineBuffering
+  hSetBuffering stdin LineBuffering
+  initLine <- getLine
+  let payload = T.drop (T.length ("INIT JSON:" :: Text)) (T.pack initLine)
   case A.decode (BL.pack (T.unpack payload)) :: Maybe InputConfig of
     Nothing -> do
       putStrLn "RESPONSE:FAILED:Failed to parse JSON as Config"
-      pure session
+      exitFailure
     Just config -> do
       initRes <- initRuntime config
       case initRes of
         Left err -> do
           putStrLn ("RESPONSE:FAILED:" ++ err)
-          pure session
+          exitFailure
         Right rt -> do
           putStrLn "RESPONSE:SUCCESS:INIT JSON received"
-          pure session { ssRuntime = Just rt }
-
--- Re-apply LANGUAGE-specific templates after initialization.
-handleSetupLanguageCommand :: Session -> IO Session
-handleSetupLanguageCommand session =
-  case ssRuntime session of
-    Nothing -> do
-      putStrLn "RESPONSE:FAILED:No config initialized"
-      pure session
-    Just rt -> do
-      res <- setupLanguageRuntime rt
-      case res of
-        Left err -> do
-          putStrLn ("RESPONSE:FAILED:" ++ err)
-          pure session
-        Right rt' -> do
-          putStrLn "RESPONSE:SUCCESS:setupLanguage worked"
-          pure session { ssRuntime = Just rt' }
-
--- Add one PID to runtime state and return the full PID set.
-handleCollectPIdsCommand :: Session -> Text -> IO Session
-handleCollectPIdsCommand session line =
-  case ssRuntime session of
-    Nothing -> do
-      putStrLn "RESPONSE:FAILED:No config initialized"
-      pure session
-    Just rt ->
-      case parseCollectPidCommand line of
-        Nothing -> do
-          putStrLn "RESPONSE:FAILED:Invalid collectPIds command"
-          pure session
-        Just pid -> do
-          let rt' = rt { rtProcIds = addUniquePid pid (rtProcIds rt) }
-          putStrLn ("RESPONSE:SUCCESS:collectPIds:" ++ formatPidSet (rtProcIds rt'))
-          pure session { ssRuntime = Just rt' }
-
--- Refine one SPIN token line and update state.
-handleRefineSPINLineCommand :: Session -> Text -> IO Session
-handleRefineSPINLineCommand session line =
-  case ssRuntime session of
-    Nothing -> do
-      putStrLn "RESPONSE:FAILED:No config initialized"
-      pure session
-    Just rt ->
-      case parseRefineLineCommand line of
-        Nothing -> do
-          putStrLn "RESPONSE:FAILED:Invalid refineSPINLine command"
-          pure session
-        Just tokens -> do
-          let rt' = refineSPINLineMain tokens rt
-          putStrLn "RESPONSE:SUCCESS:refineSPINLine"
-          pure session { ssRuntime = Just rt' }
-
--- Stream final generated code body using explicit begin/end markers so Python
--- can read multiline content safely.
-handleTestBodyCommand :: Session -> IO Session
-handleTestBodyCommand session =
-  case ssRuntime session of
-    Nothing -> do
-      putStrLn "RESPONSE:FAILED:No config initialized"
-      pure session
-    Just rt -> do
-      putStrLn "RESPONSE:SUCCESS:testBody:BEGIN"
-      putStrLn (T.unpack (renderTestBody rt))
-      putStrLn "RESPONSE:SUCCESS:testBody:END"
-      pure session
-
--- Command router for one input line.
-handleLine :: Session -> Text -> IO Session
-handleLine session line
-  | "INIT JSON:" `T.isPrefixOf` line = handleInitCommand session line
-  | line == "COMMAND:setupLanguage" = handleSetupLanguageCommand session
-  | "COMMAND:collectPIds:" `T.isPrefixOf` line = handleCollectPIdsCommand session line
-  | "COMMAND:refineSPINLine:" `T.isPrefixOf` line = handleRefineSPINLineCommand session line
-  | line == "COMMAND:testBody" = handleTestBodyCommand session
-  | otherwise = do
-      putStrLn ("DEBUG: Unknown command: " ++ T.unpack (T.take 80 line))
-      putStrLn "RESPONSE:FAILED:Unknown command"
-      pure session
-
--- Tail-recursive REPL loop (process exits on stdin EOF).
-commandLoop :: Session -> IO ()
-commandLoop session = do
-  eof <- hIsEOF stdin
-  if eof
-    then putStrLn "DEBUG: EOF reached, exiting"
-    else do
-      line <- getLine
-      next <- handleLine session (T.pack line)
-      commandLoop next
-
--- Entrypoint for interactive mode used by Python bridge.
-main :: IO ()
-main = do
-  hSetBuffering stdout LineBuffering
-  hSetBuffering stdin LineBuffering
-  cwd <- getCurrentDirectory
-  putStrLn ("Haskell: Started in directory: " ++ cwd)
-  putStrLn "Haskell: Started - WITH EOF HANDLING"
-  commandLoop (Session Nothing)
+          commandLoop rt
