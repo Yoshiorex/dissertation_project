@@ -1,0 +1,1502 @@
+{
+  "spin_exe": "C:\\Users\\charl\\AppData\\Local\\Temp\\spin-src\\Spin-master\\Src\\spin.exe",
+  "haskell_exe": "c:\\Users\\charl\\Documents\\GitHub\\dissertation_project\\formal\\promela\\src\\src\\refine-haskell-win.exe",
+  "models": [
+    {
+      "model": "barrier-mgr",
+      "model_root": "barrier-mgr",
+      "spin_returncode": 0,
+      "trail_count": 20,
+      "python_file_count": 20,
+      "haskell_file_count": 20,
+      "different_files": [
+        {
+          "file": "tr-barrier-mgr-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-0.c\n",
+            "+++ haskell/tr-barrier-mgr-model-0.c\n",
+            "@@ -298,4 +298,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-1.c\n",
+            "+++ haskell/tr-barrier-mgr-model-1.c\n",
+            "@@ -271,4 +271,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-10.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-10.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-10.c\n",
+            "+++ haskell/tr-barrier-mgr-model-10.c\n",
+            "@@ -317,4 +317,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-11.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-11.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-11.c\n",
+            "+++ haskell/tr-barrier-mgr-model-11.c\n",
+            "@@ -290,4 +290,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-12.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-12.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-12.c\n",
+            "+++ haskell/tr-barrier-mgr-model-12.c\n",
+            "@@ -322,4 +322,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-13.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-13.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-13.c\n",
+            "+++ haskell/tr-barrier-mgr-model-13.c\n",
+            "@@ -295,4 +295,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-14.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-14.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-14.c\n",
+            "+++ haskell/tr-barrier-mgr-model-14.c\n",
+            "@@ -279,4 +279,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-15.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-15.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-15.c\n",
+            "+++ haskell/tr-barrier-mgr-model-15.c\n",
+            "@@ -252,4 +252,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-16.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-16.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-16.c\n",
+            "+++ haskell/tr-barrier-mgr-model-16.c\n",
+            "@@ -298,4 +298,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-17.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-17.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-17.c\n",
+            "+++ haskell/tr-barrier-mgr-model-17.c\n",
+            "@@ -271,4 +271,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-18.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-18.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-18.c\n",
+            "+++ haskell/tr-barrier-mgr-model-18.c\n",
+            "@@ -317,4 +317,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-19.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-19.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-19.c\n",
+            "+++ haskell/tr-barrier-mgr-model-19.c\n",
+            "@@ -290,4 +290,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-2.c\n",
+            "+++ haskell/tr-barrier-mgr-model-2.c\n",
+            "@@ -298,4 +298,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-3.c\n",
+            "+++ haskell/tr-barrier-mgr-model-3.c\n",
+            "@@ -271,4 +271,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-4.c\n",
+            "+++ haskell/tr-barrier-mgr-model-4.c\n",
+            "@@ -292,4 +292,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-5.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-5.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-5.c\n",
+            "+++ haskell/tr-barrier-mgr-model-5.c\n",
+            "@@ -265,4 +265,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-6.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-6.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-6.c\n",
+            "+++ haskell/tr-barrier-mgr-model-6.c\n",
+            "@@ -317,4 +317,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-7.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-7.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-7.c\n",
+            "+++ haskell/tr-barrier-mgr-model-7.c\n",
+            "@@ -290,4 +290,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-8.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-8.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-8.c\n",
+            "+++ haskell/tr-barrier-mgr-model-8.c\n",
+            "@@ -317,4 +317,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-barrier-mgr-model-9.c",
+          "diff_path": "summaries\\refine_compare_20260330\\barrier-mgr\\diffs\\tr-barrier-mgr-model-9.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-barrier-mgr-model-9.c\n",
+            "+++ haskell/tr-barrier-mgr-model-9.c\n",
+            "@@ -290,4 +290,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "model": "chains",
+      "model_root": "chains",
+      "spin_returncode": 0,
+      "trail_count": 21,
+      "python_file_count": 21,
+      "haskell_file_count": 21,
+      "different_files": [
+        {
+          "file": "tr-chains-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-0.c\n",
+            "+++ haskell/tr-chains-model-0.c\n",
+            "@@ -141,4 +141,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-1.c\n",
+            "+++ haskell/tr-chains-model-1.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-10.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-10.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-10.c\n",
+            "+++ haskell/tr-chains-model-10.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-11.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-11.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-11.c\n",
+            "+++ haskell/tr-chains-model-11.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-12.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-12.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-12.c\n",
+            "+++ haskell/tr-chains-model-12.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-13.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-13.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-13.c\n",
+            "+++ haskell/tr-chains-model-13.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-14.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-14.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-14.c\n",
+            "+++ haskell/tr-chains-model-14.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-15.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-15.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-15.c\n",
+            "+++ haskell/tr-chains-model-15.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-16.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-16.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-16.c\n",
+            "+++ haskell/tr-chains-model-16.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-17.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-17.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-17.c\n",
+            "+++ haskell/tr-chains-model-17.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-18.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-18.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-18.c\n",
+            "+++ haskell/tr-chains-model-18.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-19.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-19.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-19.c\n",
+            "+++ haskell/tr-chains-model-19.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-2.c\n",
+            "+++ haskell/tr-chains-model-2.c\n",
+            "@@ -141,4 +141,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-20.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-20.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-20.c\n",
+            "+++ haskell/tr-chains-model-20.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-3.c\n",
+            "+++ haskell/tr-chains-model-3.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-4.c\n",
+            "+++ haskell/tr-chains-model-4.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-5.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-5.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-5.c\n",
+            "+++ haskell/tr-chains-model-5.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-6.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-6.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-6.c\n",
+            "+++ haskell/tr-chains-model-6.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-7.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-7.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-7.c\n",
+            "+++ haskell/tr-chains-model-7.c\n",
+            "@@ -145,4 +145,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-8.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-8.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-8.c\n",
+            "+++ haskell/tr-chains-model-8.c\n",
+            "@@ -143,4 +143,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-chains-model-9.c",
+          "diff_path": "summaries\\refine_compare_20260330\\chains\\diffs\\tr-chains-model-9.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-chains-model-9.c\n",
+            "+++ haskell/tr-chains-model-9.c\n",
+            "@@ -141,4 +141,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "model": "event-mgr",
+      "model_root": "event-mgr",
+      "spin_returncode": 0,
+      "trail_count": 11,
+      "python_file_count": 11,
+      "haskell_file_count": 11,
+      "different_files": [
+        {
+          "file": "tr-event-mgr-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-0.c\n",
+            "+++ haskell/tr-event-mgr-model-0.c\n",
+            "@@ -209,4 +209,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-1.c\n",
+            "+++ haskell/tr-event-mgr-model-1.c\n",
+            "@@ -207,4 +207,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-10.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-10.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-10.c\n",
+            "+++ haskell/tr-event-mgr-model-10.c\n",
+            "@@ -240,4 +240,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-2.c\n",
+            "+++ haskell/tr-event-mgr-model-2.c\n",
+            "@@ -219,4 +219,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-3.c\n",
+            "+++ haskell/tr-event-mgr-model-3.c\n",
+            "@@ -205,4 +205,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-4.c\n",
+            "+++ haskell/tr-event-mgr-model-4.c\n",
+            "@@ -226,4 +226,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-5.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-5.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-5.c\n",
+            "+++ haskell/tr-event-mgr-model-5.c\n",
+            "@@ -226,4 +226,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-6.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-6.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-6.c\n",
+            "+++ haskell/tr-event-mgr-model-6.c\n",
+            "@@ -226,4 +226,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-7.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-7.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-7.c\n",
+            "+++ haskell/tr-event-mgr-model-7.c\n",
+            "@@ -226,4 +226,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-8.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-8.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-8.c\n",
+            "+++ haskell/tr-event-mgr-model-8.c\n",
+            "@@ -245,4 +245,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-event-mgr-model-9.c",
+          "diff_path": "summaries\\refine_compare_20260330\\event-mgr\\diffs\\tr-event-mgr-model-9.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-event-mgr-model-9.c\n",
+            "+++ haskell/tr-event-mgr-model-9.c\n",
+            "@@ -257,4 +257,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "model": "msg-mgr",
+      "model_root": "msg-mgr",
+      "spin_returncode": 0,
+      "trail_count": 18,
+      "python_file_count": 18,
+      "haskell_file_count": 18,
+      "different_files": [
+        {
+          "file": "tr-msg-mgr-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-0.c\n",
+            "+++ haskell/tr-msg-mgr-model-0.c\n",
+            "@@ -234,4 +234,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-1.c\n",
+            "+++ haskell/tr-msg-mgr-model-1.c\n",
+            "@@ -234,4 +234,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-10.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-10.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-10.c\n",
+            "+++ haskell/tr-msg-mgr-model-10.c\n",
+            "@@ -244,4 +244,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-11.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-11.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-11.c\n",
+            "+++ haskell/tr-msg-mgr-model-11.c\n",
+            "@@ -244,4 +244,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-12.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-12.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-12.c\n",
+            "+++ haskell/tr-msg-mgr-model-12.c\n",
+            "@@ -244,4 +244,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-13.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-13.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-13.c\n",
+            "+++ haskell/tr-msg-mgr-model-13.c\n",
+            "@@ -244,4 +244,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-14.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-14.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-14.c\n",
+            "+++ haskell/tr-msg-mgr-model-14.c\n",
+            "@@ -244,4 +244,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-15.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-15.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-15.c\n",
+            "+++ haskell/tr-msg-mgr-model-15.c\n",
+            "@@ -251,4 +251,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-16.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-16.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-16.c\n",
+            "+++ haskell/tr-msg-mgr-model-16.c\n",
+            "@@ -253,4 +253,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-17.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-17.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-17.c\n",
+            "+++ haskell/tr-msg-mgr-model-17.c\n",
+            "@@ -246,4 +246,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-2.c\n",
+            "+++ haskell/tr-msg-mgr-model-2.c\n",
+            "@@ -234,4 +234,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-3.c\n",
+            "+++ haskell/tr-msg-mgr-model-3.c\n",
+            "@@ -234,4 +234,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-4.c\n",
+            "+++ haskell/tr-msg-mgr-model-4.c\n",
+            "@@ -294,4 +294,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-5.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-5.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-5.c\n",
+            "+++ haskell/tr-msg-mgr-model-5.c\n",
+            "@@ -227,4 +227,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-6.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-6.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-6.c\n",
+            "+++ haskell/tr-msg-mgr-model-6.c\n",
+            "@@ -227,4 +227,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-7.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-7.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-7.c\n",
+            "+++ haskell/tr-msg-mgr-model-7.c\n",
+            "@@ -241,4 +241,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-8.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-8.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-8.c\n",
+            "+++ haskell/tr-msg-mgr-model-8.c\n",
+            "@@ -277,4 +277,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-msg-mgr-model-9.c",
+          "diff_path": "summaries\\refine_compare_20260330\\msg-mgr\\diffs\\tr-msg-mgr-model-9.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-msg-mgr-model-9.c\n",
+            "+++ haskell/tr-msg-mgr-model-9.c\n",
+            "@@ -262,4 +262,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "model": "sem-mgr",
+      "model_root": "sem-mgr",
+      "spin_returncode": 0,
+      "trail_count": 0,
+      "python_file_count": 0,
+      "haskell_file_count": 0,
+      "different_files": [],
+      "errors": [
+        "No trail files produced by SPIN"
+      ]
+    },
+    {
+      "model": "task-mgr",
+      "model_root": "task-mgr",
+      "spin_returncode": 0,
+      "trail_count": 19,
+      "python_file_count": 19,
+      "haskell_file_count": 19,
+      "different_files": [
+        {
+          "file": "tr-task-mgr-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-0.c\n",
+            "+++ haskell/tr-task-mgr-model-0.c\n",
+            "@@ -147,4 +147,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-1.c\n",
+            "+++ haskell/tr-task-mgr-model-1.c\n",
+            "@@ -147,4 +147,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-10.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-10.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-10.c\n",
+            "+++ haskell/tr-task-mgr-model-10.c\n",
+            "@@ -171,4 +171,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-11.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-11.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-11.c\n",
+            "+++ haskell/tr-task-mgr-model-11.c\n",
+            "@@ -205,4 +205,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-12.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-12.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-12.c\n",
+            "+++ haskell/tr-task-mgr-model-12.c\n",
+            "@@ -205,4 +205,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-13.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-13.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-13.c\n",
+            "+++ haskell/tr-task-mgr-model-13.c\n",
+            "@@ -213,4 +213,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-14.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-14.c.diff",
+          "diff_lines": 19,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-14.c\n",
+            "+++ haskell/tr-task-mgr-model-14.c\n",
+            "@@ -157,8 +157,8 @@\n",
+            "   T_log(T_NORMAL,\"@@@ 4 CALL WaitForSuspend 2 resumeRC\");",
+            "   T_log( T_NORMAL, \"Waiting for Task(%d) to Suspend\", 2, resumeRC );",
+            "-  do {",
+            "+  do {{",
+            "     resumeRC = ( *ctx->t_isSuspend )( 2 ? taskID[2] : 0xffffffff );",
+            "     rtems_task_wake_after( 100 );",
+            "-  } while (resumeRC != RTEMS_ALREADY_SUSPENDED);",
+            "+  }} while (resumeRC != RTEMS_ALREADY_SUSPENDED);",
+            "   "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-15.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-15.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-15.c\n",
+            "+++ haskell/tr-task-mgr-model-15.c\n",
+            "@@ -205,4 +205,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-16.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-16.c.diff",
+          "diff_lines": 19,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-16.c\n",
+            "+++ haskell/tr-task-mgr-model-16.c\n",
+            "@@ -178,8 +178,8 @@\n",
+            "   T_log(T_NORMAL,\"@@@ 4 CALL WaitForSuspend 2 resumeRC\");",
+            "   T_log( T_NORMAL, \"Waiting for Task(%d) to Suspend\", 2, resumeRC );",
+            "-  do {",
+            "+  do {{",
+            "     resumeRC = ( *ctx->t_isSuspend )( 2 ? taskID[2] : 0xffffffff );",
+            "     rtems_task_wake_after( 100 );",
+            "-  } while (resumeRC != RTEMS_ALREADY_SUSPENDED);",
+            "+  }} while (resumeRC != RTEMS_ALREADY_SUSPENDED);",
+            "   "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-17.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-17.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-17.c\n",
+            "+++ haskell/tr-task-mgr-model-17.c\n",
+            "@@ -365,4 +365,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-18.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-18.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-18.c\n",
+            "+++ haskell/tr-task-mgr-model-18.c\n",
+            "@@ -347,4 +347,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-2.c\n",
+            "+++ haskell/tr-task-mgr-model-2.c\n",
+            "@@ -147,4 +147,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-3.c\n",
+            "+++ haskell/tr-task-mgr-model-3.c\n",
+            "@@ -147,4 +147,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-4.c\n",
+            "+++ haskell/tr-task-mgr-model-4.c\n",
+            "@@ -147,4 +147,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-5.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-5.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-5.c\n",
+            "+++ haskell/tr-task-mgr-model-5.c\n",
+            "@@ -155,4 +155,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-6.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-6.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-6.c\n",
+            "+++ haskell/tr-task-mgr-model-6.c\n",
+            "@@ -155,4 +155,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-7.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-7.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-7.c\n",
+            "+++ haskell/tr-task-mgr-model-7.c\n",
+            "@@ -155,4 +155,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-8.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-8.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-8.c\n",
+            "+++ haskell/tr-task-mgr-model-8.c\n",
+            "@@ -155,4 +155,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-task-mgr-model-9.c",
+          "diff_path": "summaries\\refine_compare_20260330\\task-mgr\\diffs\\tr-task-mgr-model-9.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-task-mgr-model-9.c\n",
+            "+++ haskell/tr-task-mgr-model-9.c\n",
+            "@@ -189,4 +189,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "model": "proto-sem",
+      "model_root": "proto-sem",
+      "spin_returncode": 0,
+      "trail_count": 5,
+      "python_file_count": 5,
+      "haskell_file_count": 5,
+      "different_files": [
+        {
+          "file": "tr-proto-sem-model-0.c",
+          "diff_path": "summaries\\refine_compare_20260330\\proto-sem\\diffs\\tr-proto-sem-model-0.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-proto-sem-model-0.c\n",
+            "+++ haskell/tr-proto-sem-model-0.c\n",
+            "@@ -188,4 +188,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-proto-sem-model-1.c",
+          "diff_path": "summaries\\refine_compare_20260330\\proto-sem\\diffs\\tr-proto-sem-model-1.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-proto-sem-model-1.c\n",
+            "+++ haskell/tr-proto-sem-model-1.c\n",
+            "@@ -204,4 +204,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-proto-sem-model-2.c",
+          "diff_path": "summaries\\refine_compare_20260330\\proto-sem\\diffs\\tr-proto-sem-model-2.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-proto-sem-model-2.c\n",
+            "+++ haskell/tr-proto-sem-model-2.c\n",
+            "@@ -204,4 +204,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-proto-sem-model-3.c",
+          "diff_path": "summaries\\refine_compare_20260330\\proto-sem\\diffs\\tr-proto-sem-model-3.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-proto-sem-model-3.c\n",
+            "+++ haskell/tr-proto-sem-model-3.c\n",
+            "@@ -204,4 +204,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        },
+        {
+          "file": "tr-proto-sem-model-4.c",
+          "diff_path": "summaries\\refine_compare_20260330\\proto-sem\\diffs\\tr-proto-sem-model-4.c.diff",
+          "diff_lines": 8,
+          "first_diff": [
+            "--- python/tr-proto-sem-model-4.c\n",
+            "+++ haskell/tr-proto-sem-model-4.c\n",
+            "@@ -204,4 +204,5 @@\n",
+            " //  ===============================================",
+            " ",
+            "+",
+            " /* SPDX-License-Identifier: BSD-2-Clause */",
+            " "
+          ]
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+--- python/tr-barrier-mgr-model-19.c
+
++++ haskell/tr-barrier-mgr-model-19.c
+
+@@ -290,4 +290,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

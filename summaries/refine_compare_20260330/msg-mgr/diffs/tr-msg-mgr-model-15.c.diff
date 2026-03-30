@@ -1,0 +1,11 @@
+--- python/tr-msg-mgr-model-15.c
+
++++ haskell/tr-msg-mgr-model-15.c
+
+@@ -251,4 +251,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

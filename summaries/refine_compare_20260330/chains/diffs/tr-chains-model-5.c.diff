@@ -1,0 +1,11 @@
+--- python/tr-chains-model-5.c
+
++++ haskell/tr-chains-model-5.c
+
+@@ -145,4 +145,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

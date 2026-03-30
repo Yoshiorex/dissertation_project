@@ -1,0 +1,57 @@
+pan:1: assertion violated 0 (at depth 137)
+pan: wrote proto-sem.pml1.trail
+pan: wrote proto-sem.pml2.trail
+pan: wrote proto-sem.pml3.trail
+pan: wrote proto-sem.pml4.trail
+pan: wrote proto-sem.pml5.trail
+
+(Spin Version 6.5.2 -- 18 September 2025)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	- (disabled by -E flag)
+
+State-vector 128 byte, depth reached 139, errors: 5
+    24012 states, stored
+    15484 states, matched
+    39496 transitions (= stored+matched)
+     4512 atomic steps
+hash conflicts:         5 (resolved)
+
+Stats on memory usage (in Megabytes):
+    3.572	equivalent memory usage for states (stored*(State-vector + overhead))
+    3.112	actual memory usage for states (compression: 87.11%)
+         	state-vector as stored = 108 byte + 28 byte overhead
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  131.562	total actual memory usage
+
+
+unreached in proctype System
+	../common/model.pml:114, state 22, "tasks[taskid].state = Ready"
+	../common/model.pml:115, state 23, "printf('@@@ %d STATE %d Ready\n',_pid,taskid)"
+	../common/model.pml:116, state 25, "(1)"
+	../common/model.pml:113, state 26, "((tasks[taskid].state==OtherWait))"
+	../common/model.pml:113, state 26, "else"
+	(4 of 43 states)
+unreached in proctype Clock
+	../common/model.pml:155, state 16, "tix = (tasks[tid].ticks-1)"
+	../common/model.pml:159, state 18, "tasks[tid].tout = 1"
+	../common/model.pml:160, state 19, "tasks[tid].state = Ready"
+	../common/model.pml:161, state 20, "printf('@@@ %d STATE %d Ready\n',_pid,tid)"
+	../common/model.pml:163, state 22, "tasks[tid].ticks = tix"
+	../common/model.pml:158, state 23, "((tix==0))"
+	../common/model.pml:158, state 23, "else"
+	(6 of 36 states)
+unreached in proctype Runner
+	(0 of 16 states)
+unreached in proctype Worker
+	(0 of 16 states)
+unreached in init
+	(0 of 23 states)
+
+pan: elapsed time 0.02 seconds
+pan: rate   1200600 states/second

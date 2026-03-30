@@ -1,0 +1,52 @@
+pan:1: assertion violated 0 (at depth 186)
+pan: wrote event-mgr.pml1.trail
+pan: wrote event-mgr.pml2.trail
+pan: wrote event-mgr.pml3.trail
+pan: wrote event-mgr.pml4.trail
+pan: wrote event-mgr.pml5.trail
+pan: wrote event-mgr.pml6.trail
+pan: wrote event-mgr.pml7.trail
+pan: wrote event-mgr.pml8.trail
+pan: wrote event-mgr.pml9.trail
+pan: wrote event-mgr.pml10.trail
+pan: wrote event-mgr.pml11.trail
+
+(Spin Version 6.5.2 -- 18 September 2025)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	- (disabled by -E flag)
+
+State-vector 192 byte, depth reached 336, errors: 11
+   271285 states, stored
+   249519 states, matched
+   520804 transitions (= stored+matched)
+   119746 atomic steps
+hash conflicts:      1173 (resolved)
+
+Stats on memory usage (in Megabytes):
+   56.918	equivalent memory usage for states (stored*(State-vector + overhead))
+   49.882	actual memory usage for states (compression: 87.64%)
+         	state-vector as stored = 165 byte + 28 byte overhead
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  178.339	total actual memory usage
+
+
+unreached in proctype System
+	(0 of 43 states)
+unreached in proctype Clock
+	(0 of 36 states)
+unreached in proctype Sender
+	event-mgr.pml:533, state 20, "printf('@@@ %d CALL HigherPriority\n',_pid)"
+	(1 of 106 states)
+unreached in proctype Receiver
+	(0 of 151 states)
+unreached in init
+	(0 of 117 states)
+
+pan: elapsed time 0.268 seconds
+pan: rate 1012257.5 states/second

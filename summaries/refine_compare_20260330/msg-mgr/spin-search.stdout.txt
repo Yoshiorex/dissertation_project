@@ -1,0 +1,148 @@
+pan:1: assertion violated 0 (at depth 483)
+pan: wrote msg-mgr.pml1.trail
+pan: wrote msg-mgr.pml2.trail
+pan: wrote msg-mgr.pml3.trail
+pan: wrote msg-mgr.pml4.trail
+pan: wrote msg-mgr.pml5.trail
+pan: wrote msg-mgr.pml6.trail
+pan: wrote msg-mgr.pml7.trail
+pan: wrote msg-mgr.pml8.trail
+pan: wrote msg-mgr.pml9.trail
+pan: wrote msg-mgr.pml10.trail
+Depth=     616 States=    1e+06 Transitions=  2.1e+06 Memory=   625.800	t=     1.72 R=   6e+05
+pan: wrote msg-mgr.pml11.trail
+pan: wrote msg-mgr.pml12.trail
+pan: wrote msg-mgr.pml13.trail
+pan: wrote msg-mgr.pml14.trail
+pan: wrote msg-mgr.pml15.trail
+pan: wrote msg-mgr.pml16.trail
+pan: wrote msg-mgr.pml17.trail
+pan: wrote msg-mgr.pml18.trail
+
+(Spin Version 6.5.2 -- 18 September 2025)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	- (disabled by -E flag)
+
+State-vector 524 byte, depth reached 630, errors: 18
+  1372753 states, stored
+  1489554 states, matched
+  2862307 transitions (= stored+matched)
+   945750 atomic steps
+hash conflicts:     32980 (resolved)
+
+Stats on memory usage (in Megabytes):
+  722.656	equivalent memory usage for states (stored*(State-vector + overhead))
+  684.776	actual memory usage for states (compression: 94.76%)
+         	state-vector as stored = 495 byte + 28 byte overhead
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+    3.041	memory lost to fragmentation
+  810.272	total actual memory usage
+
+
+unreached in proctype System
+	../common/model.pml:114, state 22, "tasks[taskid].state = Ready"
+	../common/model.pml:115, state 23, "printf('@@@ %d STATE %d Ready\n',_pid,taskid)"
+	(2 of 43 states)
+unreached in proctype Clock
+	(0 of 36 states)
+unreached in proctype Sender
+	(0 of 167 states)
+unreached in proctype Receiver1
+	msg-mgr.pml:139, state 76, "(1)"
+	msg-mgr.pml:168, state 89, "queueList[msgstate[taskid].targetQueue].tail = (queueList[msgstate[taskid].targetQueue].tail+1)"
+	msg-mgr.pml:166, state 90, "((msgstate[taskid].rcvMsg==0))"
+	msg-mgr.pml:166, state 90, "((queueList[msgstate[taskid].targetQueue].tail==(4-1)))"
+	msg-mgr.pml:166, state 90, "else"
+	msg-mgr.pml:172, state 95, "(1)"
+	msg-mgr.pml:171, state 96, "((queueList[msgstate[taskid].targetQueue].head==queueList[msgstate[taskid].targetQueue].tail))"
+	msg-mgr.pml:171, state 96, "else"
+	msg-mgr.pml:163, state 99, "msgstate[taskid].rcvMsg = queueList[msgstate[taskid].targetQueue].messages[queueList[msgstate[taskid].targetQueue].tail]"
+	msg-mgr.pml:168, state 133, "queueList[msgstate[taskid].targetQueue].tail = (queueList[msgstate[taskid].targetQueue].tail+1)"
+	msg-mgr.pml:294, state 146, "printf('@@@ %d LOG Receive Not Satisfied (no wait)\n',_pid)"
+	msg-mgr.pml:172, state 206, "(1)"
+	msg-mgr.pml:314, state 214, "recrc = 0"
+	(10 of 239 states)
+unreached in proctype Receiver2
+	msg-mgr.pml:299, state 43, "tasks[taskid].ticks = msgstate[taskid].rcvInterval"
+	msg-mgr.pml:300, state 44, "tasks[taskid].tout = 0"
+	msg-mgr.pml:301, state 45, "printf('@@@ %d STATE %d TimeWait %d\n',_pid,taskid,msgstate[taskid].rcvInterval)"
+	msg-mgr.pml:305, state 46, "tasks[taskid].state = TimeWait"
+	msg-mgr.pml:121, state 51, "queueList[msgstate[taskid].targetQueue].lastTask = (queueList[msgstate[taskid].targetQueue].lastTask+1)"
+	msg-mgr.pml:120, state 52, "((queueList[msgstate[taskid].targetQueue].lastTask==(4-1)))"
+	msg-mgr.pml:120, state 52, "else"
+	msg-mgr.pml:118, state 61, "queueList[msgstate[taskid].targetQueue].waitingTasks[queueList[msgstate[taskid].targetQueue].lastTask] = taskid"
+	../common/model.pml:15, state 65, "printf('\n')"
+	../common/model.pml:69, state 67, "((tasks[taskid].state==Ready))"
+	../common/model.pml:66, state 69, "printf('@@@ %d LOG Task %d waiting, state = ',_pid,taskid)"
+	msg-mgr.pml:135, state 75, "queueList[msgstate[taskid].targetQueue].nextTask = (queueList[msgstate[taskid].targetQueue].nextTask+1)"
+	msg-mgr.pml:134, state 76, "((queueList[msgstate[taskid].targetQueue].nextTask==(4-1)))"
+	msg-mgr.pml:134, state 76, "else"
+	msg-mgr.pml:139, state 81, "(1)"
+	msg-mgr.pml:138, state 82, "((queueList[msgstate[taskid].targetQueue].lastTask==queueList[msgstate[taskid].targetQueue].nextTask))"
+	msg-mgr.pml:138, state 82, "else"
+	msg-mgr.pml:132, state 85, "taskid = queueList[msgstate[taskid].targetQueue].waitingTasks[queueList[msgstate[taskid].targetQueue].nextTask]"
+	msg-mgr.pml:168, state 94, "queueList[msgstate[taskid].targetQueue].tail = (queueList[msgstate[taskid].targetQueue].tail+1)"
+	msg-mgr.pml:166, state 95, "((msgstate[taskid].rcvMsg==0))"
+	msg-mgr.pml:166, state 95, "((queueList[msgstate[taskid].targetQueue].tail==(4-1)))"
+	msg-mgr.pml:166, state 95, "else"
+	msg-mgr.pml:172, state 100, "(1)"
+	msg-mgr.pml:171, state 101, "((queueList[msgstate[taskid].targetQueue].head==queueList[msgstate[taskid].targetQueue].tail))"
+	msg-mgr.pml:171, state 101, "else"
+	msg-mgr.pml:163, state 104, "msgstate[taskid].rcvMsg = queueList[msgstate[taskid].targetQueue].messages[queueList[msgstate[taskid].targetQueue].tail]"
+	msg-mgr.pml:310, state 105, "(tasks[taskid].tout)"
+	msg-mgr.pml:310, state 105, "else"
+	msg-mgr.pml:204, state 127, "printf('@@@ %d SIGNAL %d\n',_pid,sendSema)"
+	msg-mgr.pml:168, state 138, "queueList[msgstate[taskid].targetQueue].tail = (queueList[msgstate[taskid].targetQueue].tail+1)"
+	msg-mgr.pml:166, state 139, "((msgstate[taskid].rcvMsg==0))"
+	msg-mgr.pml:166, state 139, "((queueList[msgstate[taskid].targetQueue].tail==(4-1)))"
+	msg-mgr.pml:166, state 139, "else"
+	msg-mgr.pml:163, state 148, "msgstate[taskid].rcvMsg = queueList[msgstate[taskid].targetQueue].messages[queueList[msgstate[taskid].targetQueue].tail]"
+	msg-mgr.pml:294, state 151, "printf('@@@ %d LOG Receive Not Satisfied (no wait)\n',_pid)"
+	msg-mgr.pml:299, state 154, "tasks[taskid].ticks = msgstate[taskid].rcvInterval"
+	msg-mgr.pml:300, state 155, "tasks[taskid].tout = 0"
+	msg-mgr.pml:301, state 156, "printf('@@@ %d STATE %d TimeWait %d\n',_pid,taskid,msgstate[taskid].rcvInterval)"
+	msg-mgr.pml:305, state 157, "tasks[taskid].state = TimeWait"
+	msg-mgr.pml:121, state 162, "queueList[msgstate[taskid].targetQueue].lastTask = (queueList[msgstate[taskid].targetQueue].lastTask+1)"
+	msg-mgr.pml:120, state 163, "((queueList[msgstate[taskid].targetQueue].lastTask==(4-1)))"
+	msg-mgr.pml:120, state 163, "else"
+	msg-mgr.pml:118, state 172, "queueList[msgstate[taskid].targetQueue].waitingTasks[queueList[msgstate[taskid].targetQueue].lastTask] = taskid"
+	msg-mgr.pml:15, state 176, "printf('\n')"
+	msg-mgr.pml:69, state 178, "((tasks[taskid].state==Ready))"
+	msg-mgr.pml:66, state 180, "printf('@@@ %d LOG Task %d waiting, state = ',_pid,taskid)"
+	msg-mgr.pml:135, state 186, "queueList[msgstate[taskid].targetQueue].nextTask = (queueList[msgstate[taskid].targetQueue].nextTask+1)"
+	msg-mgr.pml:134, state 187, "((queueList[msgstate[taskid].targetQueue].nextTask==(4-1)))"
+	msg-mgr.pml:134, state 187, "else"
+	msg-mgr.pml:139, state 192, "(1)"
+	msg-mgr.pml:138, state 193, "((queueList[msgstate[taskid].targetQueue].lastTask==queueList[msgstate[taskid].targetQueue].nextTask))"
+	msg-mgr.pml:138, state 193, "else"
+	msg-mgr.pml:132, state 196, "taskid = queueList[msgstate[taskid].targetQueue].waitingTasks[queueList[msgstate[taskid].targetQueue].nextTask]"
+	msg-mgr.pml:168, state 205, "queueList[msgstate[taskid].targetQueue].tail = (queueList[msgstate[taskid].targetQueue].tail+1)"
+	msg-mgr.pml:166, state 206, "((msgstate[taskid].rcvMsg==0))"
+	msg-mgr.pml:166, state 206, "((queueList[msgstate[taskid].targetQueue].tail==(4-1)))"
+	msg-mgr.pml:166, state 206, "else"
+	msg-mgr.pml:172, state 211, "(1)"
+	msg-mgr.pml:171, state 212, "((queueList[msgstate[taskid].targetQueue].head==queueList[msgstate[taskid].targetQueue].tail))"
+	msg-mgr.pml:171, state 212, "else"
+	msg-mgr.pml:163, state 215, "msgstate[taskid].rcvMsg = queueList[msgstate[taskid].targetQueue].messages[queueList[msgstate[taskid].targetQueue].tail]"
+	msg-mgr.pml:310, state 216, "(tasks[taskid].tout)"
+	msg-mgr.pml:310, state 216, "else"
+	msg-mgr.pml:314, state 219, "recrc = 0"
+	msg-mgr.pml:293, state 220, "(((msgstate[taskid].rcvMsg==0)&&!(msgstate[taskid].doWait)))"
+	msg-mgr.pml:293, state 220, "(((msgstate[taskid].rcvMsg==0)&&msgstate[taskid].doWait))"
+	msg-mgr.pml:293, state 220, "else"
+	msg-mgr.pml:287, state 224, "((msgstate[taskid].targetQueue==0))"
+	msg-mgr.pml:287, state 224, "else"
+	msg-mgr.pml:285, state 225, "rcvmsg = 0"
+	msg-mgr.pml:650, state 228, "printf('@@@ %d CALL message_queue_receive %d %d %d %d recrc\n',_pid,taskid,msgstate[taskid].targetQueue,msgstate[taskid].doWait,msgstate[taskid].rcvInterval)"
+	(52 of 244 states)
+unreached in init
+	(0 of 116 states)
+
+pan: elapsed time 2.37 seconds
+pan: rate 580445.24 states/second

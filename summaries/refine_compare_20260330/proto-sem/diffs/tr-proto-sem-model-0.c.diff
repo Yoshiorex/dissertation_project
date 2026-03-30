@@ -1,0 +1,11 @@
+--- python/tr-proto-sem-model-0.c
+
++++ haskell/tr-proto-sem-model-0.c
+
+@@ -188,4 +188,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

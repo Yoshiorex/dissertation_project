@@ -1,0 +1,24 @@
+Refine Command Comparison Findings
+
+Models successfully compared
+barrier-mgr: 20 trails, 20 python files, 20 haskell files, 20 differing files
+chains: 21 trails, 21 python files, 21 haskell files, 21 differing files
+event-mgr: 11 trails, 11 python files, 11 haskell files, 11 differing files
+msg-mgr: 18 trails, 18 python files, 18 haskell files, 18 differing files
+sem-mgr: 36 trails, 36 python files, 36 haskell files, 36 differing files
+task-mgr: 19 trails, 19 python files, 19 haskell files, 19 differing files
+proto-sem: 5 trails, 5 python files, 5 haskell files, 5 differing files
+
+Observed difference patterns
+barrier-mgr, chains, event-mgr, msg-mgr, and proto-sem: all diffs are 11-line unified diffs showing one extra blank line before the final SPDX footer in the haskell-generated file
+sem-mgr: all diffs are 11-line unified diffs showing one extra blank line before the "// Task 0" section in the haskell-generated file
+task-mgr: 17 files match the common footer-style blank-line difference; models 14 and 16 have an additional substantive formatting difference where python emits "do {" / "} while (...)" and haskell emits "do {{" / "}} while (...)"
+
+Locations
+per-model generated outputs and diffs live under this directory
+c:\Users\charl\Documents\GitHub\dissertation_project\summaries\refine_compare_20260330
+
+Representative diff files
+c:\Users\charl\Documents\GitHub\dissertation_project\summaries\refine_compare_20260330\chains\diffs\tr-chains-model-0.c.diff
+c:\Users\charl\Documents\GitHub\dissertation_project\summaries\refine_compare_20260330\sem-mgr\diffs\tr-sem-mgr-model-0.c.diff
+c:\Users\charl\Documents\GitHub\dissertation_project\summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-14.c.diff

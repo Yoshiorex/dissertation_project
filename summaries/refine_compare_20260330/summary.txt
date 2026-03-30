@@ -1,0 +1,46 @@
+Refine Command Comparison
+
+barrier-mgr: trails=20, python=20, haskell=20, diffs=20, errors=0
+  diff: tr-barrier-mgr-model-0.c -> summaries\refine_compare_20260330\barrier-mgr\diffs\tr-barrier-mgr-model-0.c.diff
+  diff: tr-barrier-mgr-model-1.c -> summaries\refine_compare_20260330\barrier-mgr\diffs\tr-barrier-mgr-model-1.c.diff
+  diff: tr-barrier-mgr-model-10.c -> summaries\refine_compare_20260330\barrier-mgr\diffs\tr-barrier-mgr-model-10.c.diff
+  diff: tr-barrier-mgr-model-11.c -> summaries\refine_compare_20260330\barrier-mgr\diffs\tr-barrier-mgr-model-11.c.diff
+  diff: tr-barrier-mgr-model-12.c -> summaries\refine_compare_20260330\barrier-mgr\diffs\tr-barrier-mgr-model-12.c.diff
+
+chains: trails=21, python=21, haskell=21, diffs=21, errors=0
+  diff: tr-chains-model-0.c -> summaries\refine_compare_20260330\chains\diffs\tr-chains-model-0.c.diff
+  diff: tr-chains-model-1.c -> summaries\refine_compare_20260330\chains\diffs\tr-chains-model-1.c.diff
+  diff: tr-chains-model-10.c -> summaries\refine_compare_20260330\chains\diffs\tr-chains-model-10.c.diff
+  diff: tr-chains-model-11.c -> summaries\refine_compare_20260330\chains\diffs\tr-chains-model-11.c.diff
+  diff: tr-chains-model-12.c -> summaries\refine_compare_20260330\chains\diffs\tr-chains-model-12.c.diff
+
+event-mgr: trails=11, python=11, haskell=11, diffs=11, errors=0
+  diff: tr-event-mgr-model-0.c -> summaries\refine_compare_20260330\event-mgr\diffs\tr-event-mgr-model-0.c.diff
+  diff: tr-event-mgr-model-1.c -> summaries\refine_compare_20260330\event-mgr\diffs\tr-event-mgr-model-1.c.diff
+  diff: tr-event-mgr-model-10.c -> summaries\refine_compare_20260330\event-mgr\diffs\tr-event-mgr-model-10.c.diff
+  diff: tr-event-mgr-model-2.c -> summaries\refine_compare_20260330\event-mgr\diffs\tr-event-mgr-model-2.c.diff
+  diff: tr-event-mgr-model-3.c -> summaries\refine_compare_20260330\event-mgr\diffs\tr-event-mgr-model-3.c.diff
+
+msg-mgr: trails=18, python=18, haskell=18, diffs=18, errors=0
+  diff: tr-msg-mgr-model-0.c -> summaries\refine_compare_20260330\msg-mgr\diffs\tr-msg-mgr-model-0.c.diff
+  diff: tr-msg-mgr-model-1.c -> summaries\refine_compare_20260330\msg-mgr\diffs\tr-msg-mgr-model-1.c.diff
+  diff: tr-msg-mgr-model-10.c -> summaries\refine_compare_20260330\msg-mgr\diffs\tr-msg-mgr-model-10.c.diff
+  diff: tr-msg-mgr-model-11.c -> summaries\refine_compare_20260330\msg-mgr\diffs\tr-msg-mgr-model-11.c.diff
+  diff: tr-msg-mgr-model-12.c -> summaries\refine_compare_20260330\msg-mgr\diffs\tr-msg-mgr-model-12.c.diff
+
+sem-mgr: trails=0, python=0, haskell=0, diffs=0, errors=1
+  error: No trail files produced by SPIN
+
+task-mgr: trails=19, python=19, haskell=19, diffs=19, errors=0
+  diff: tr-task-mgr-model-0.c -> summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-0.c.diff
+  diff: tr-task-mgr-model-1.c -> summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-1.c.diff
+  diff: tr-task-mgr-model-10.c -> summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-10.c.diff
+  diff: tr-task-mgr-model-11.c -> summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-11.c.diff
+  diff: tr-task-mgr-model-12.c -> summaries\refine_compare_20260330\task-mgr\diffs\tr-task-mgr-model-12.c.diff
+
+proto-sem: trails=5, python=5, haskell=5, diffs=5, errors=0
+  diff: tr-proto-sem-model-0.c -> summaries\refine_compare_20260330\proto-sem\diffs\tr-proto-sem-model-0.c.diff
+  diff: tr-proto-sem-model-1.c -> summaries\refine_compare_20260330\proto-sem\diffs\tr-proto-sem-model-1.c.diff
+  diff: tr-proto-sem-model-2.c -> summaries\refine_compare_20260330\proto-sem\diffs\tr-proto-sem-model-2.c.diff
+  diff: tr-proto-sem-model-3.c -> summaries\refine_compare_20260330\proto-sem\diffs\tr-proto-sem-model-3.c.diff
+  diff: tr-proto-sem-model-4.c -> summaries\refine_compare_20260330\proto-sem\diffs\tr-proto-sem-model-4.c.diff

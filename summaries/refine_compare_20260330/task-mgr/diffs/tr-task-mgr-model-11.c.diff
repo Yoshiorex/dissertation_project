@@ -1,0 +1,11 @@
+--- python/tr-task-mgr-model-11.c
+
++++ haskell/tr-task-mgr-model-11.c
+
+@@ -205,4 +205,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

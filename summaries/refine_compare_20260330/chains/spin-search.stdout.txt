@@ -1,0 +1,79 @@
+pan:1: assertion violated (chain.size!=0) (at depth 75)
+pan: wrote chains.pml1.trail
+pan: wrote chains.pml2.trail
+pan: wrote chains.pml3.trail
+pan: wrote chains.pml4.trail
+pan: wrote chains.pml5.trail
+pan: wrote chains.pml6.trail
+pan: wrote chains.pml7.trail
+pan: wrote chains.pml8.trail
+pan: wrote chains.pml9.trail
+pan: wrote chains.pml10.trail
+pan: wrote chains.pml11.trail
+pan: wrote chains.pml12.trail
+pan: wrote chains.pml13.trail
+pan: wrote chains.pml14.trail
+pan: wrote chains.pml15.trail
+pan: wrote chains.pml16.trail
+pan: wrote chains.pml17.trail
+pan: wrote chains.pml18.trail
+pan: wrote chains.pml19.trail
+pan: wrote chains.pml20.trail
+pan: wrote chains.pml21.trail
+
+(Spin Version 6.5.2 -- 18 September 2025)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	- (disabled by -E flag)
+
+State-vector 128 byte, depth reached 84, errors: 21
+      531 states, stored
+      141 states, matched
+      672 transitions (= stored+matched)
+     3222 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.079	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.274	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+unreached in proctype doAppend
+	(0 of 34 states)
+unreached in proctype doGet
+	chains.pml:132, state 4, "chain.size = (chain.size-1)"
+	chains.pml:138, state 12, "(1)"
+	chains.pml:137, state 13, "((chain.head==0))"
+	chains.pml:137, state 13, "((chain.head!=0))"
+	chains.pml:93, state 24, "cnp = memory[cnp].nxt"
+	chains.pml:90, state 25, "((cnp==0))"
+	chains.pml:90, state 25, "((cnp!=0))"
+	chains.pml:87, state 29, "cnp = chain.head"
+	chains.pml:86, state 30, "cnp = 0"
+	chains.pml:68, state 35, "printf('@@@ 0 SCALAR itm %d\n',memory[nptr].itm)"
+	chains.pml:69, state 36, "printf('@@@ 0 END nptr\n')"
+	chains.pml:70, state 38, "(1)"
+	chains.pml:65, state 39, "(nptr)"
+	chains.pml:65, state 39, "else"
+	chains.pml:63, state 42, "printf('@@@ 0 PTR nptr %d\n',nptr)"
+	chains.pml:128, state 43, "nptr = chain.head"
+	chains.pml:150, state 44, "-end-"
+	(14 of 44 states)
+unreached in proctype doNonNullGet
+	chains.pml:70, state 39, "(1)"
+	(1 of 45 states)
+unreached in init
+	chains.pml:93, state 19, "cnp = memory[cnp].nxt"
+	chains.pml:68, state 29, "printf('@@@ 0 SCALAR itm %d\n',memory[nptr].itm)"
+	chains.pml:69, state 30, "printf('@@@ 0 END nptr\n')"
+	(3 of 48 states)
+
+pan: elapsed time 0.034 seconds
+pan: rate 15617.647 states/second

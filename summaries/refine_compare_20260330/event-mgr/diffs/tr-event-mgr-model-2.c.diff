@@ -1,0 +1,11 @@
+--- python/tr-event-mgr-model-2.c
+
++++ haskell/tr-event-mgr-model-2.c
+
+@@ -219,4 +219,5 @@
+
+ //  ===============================================
+ 
++
+ /* SPDX-License-Identifier: BSD-2-Clause */
+ 

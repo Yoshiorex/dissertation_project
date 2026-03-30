@@ -1,0 +1,11 @@
+--- python
+
++++ haskell
+
+@@ -333,4 +333,5 @@
+
+ 
+ 
++
+ // Task 0
+ static void Runner( RtemsModelSemMgr_Context *ctx )
