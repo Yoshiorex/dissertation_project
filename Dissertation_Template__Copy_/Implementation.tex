@@ -19,7 +19,7 @@ The testing and debugging were done to lead towards functional equivalence wiht 
 
 The key tools used to do the porting would be The bridge script, the diff script and unit testing.
 
-\section{THe implementation}
+\section{The implementation}
 
 \subsection{The bridge}
 a bridge file is created thats able to decide between the python adn teh haskell refine command. it will first try the hasekll adn if the program doesnt respond with expected results, the python version is fallen back on. it is qutie important in that it also handles all communication with the haskell in this phase. communication is handled entirely via the standard input and output. at this point it was important to maintain classes present in the python implementation in order to not break compatibility.
@@ -35,77 +35,73 @@ unit testing was implemented in refind command.hs early on in order to help figu
 
 
 \subsection{refine command}
-this was the main file to be converted, put simply it is the file that turns the files generated from the model checker and turns them into  test code. it does this by taking a line of spin output and matching it via a custom dictionary to a snippet of c cod e. this custom dictionary has entries for all spin lines and template c code with interchangeable parts where sepcific values like variable names and integer values can be subbed in. the program does this  while keeping track of things like whether or not the program in currently translating a struct or an array.
+this was the main file to be converted. put simply it is the file that takes the output of the model checker and turns it into test code. it does this by taking a line of spin output and matching it via a custom dictionary to a snippet of c code. this custom dictionary stores template c code with gaps where values such as variable names and integers can be substituted in. to do this properly the program also has to keep track of context, for example whether the current output is inside a struct, inside a sequence, or just a standalone value.
 
-in the beginning python code was converted into haskell code line by line aiming to model the original programs behaviour as closely as possible. but what i found developing this way, is that even with multiple passes trying to emulate closer and closer to what the python was doing, generated test code would differ. what made me stop this appraoch is realizing that converting this way didnt allow for the leveraging of haskells strengths, rendering teh exercise practically pointless. so continuing forward python behaviour was more creatively ported to haskell, using the diff script to ensure that the output never strayed, ensuring fucntinoal equivalence if not semantic equivalence. 
-the point where i made this realisation to switch approaches was in the managing of state. The program needs to be aware of if the current ouput of the model checker is referring to a struct or an array or just a single value as the dictionaries have different entries for the same model cehcker output depending on these details about the state. the python version handles this by making its large match statement even larger with branches and nested match statements for each of these states. each branch is picked based on a number of state variables that were constantly being mutated. this certainly worked and could be emulated in the haskell but was clunky, cumbersome to extend and difficult to reason about. 
+in the beginning python code was converted into haskell code line by line aiming to model the original programs behaviour as closely as possible. but what i found developing this way is that even with multiple passes trying to emulate closer and closer to what the python was doing, generated test code would still differ. what made me stop this approach was realizing that converting this way didnt allow for the leveraging of haskells strengths, rendering the exercise practically pointless. so continuing forward python behaviour was more creatively ported to haskell, using the diff script to ensure that the output never strayed, ensuring functional equivalence if not semantic equivalence.
 
-the new way of approaching this system in a more functional haskelly way was to remove in place state variable mutation and replace it with a state function. this function takes in the previous state, uses it to precoess one spin line, and then returns a new state, making the state changes explicit 
+the point where i made this realisation to switch approaches was in the managing of state. the program needs to be aware of whether the current output of the model checker is referring to a struct, a sequence, or just a single value, as the dictionaries have different entries for the same model checker output depending on that context. the python version handles this by making its large match statement even larger with branches and nested match statements for each of these states. each branch is picked based on a number of state variables that were constantly being mutated. this certainly worked and could be emulated in the haskell but was clunky, cumbersome to extend and difficult to reason about.
 
+the new way of approaching this system in a more functional haskelly way was to remove in place state variable mutation and replace it with a state function. this function takes in the previous state, uses it to process one spin line, and then returns a new state, making the state changes explicit. this was the point where the port stopped being a direct copy of the python and started being a haskell program that happened to preserve the same output. what mattered from that point on was not keeping the same internal structure, but keeping the generated test files the same.
 
+this change shows up most clearly in the following snippets.
 
-In the end the programs ended up differing in some key ways
+\paragraph{python state stored and mutated on the object}
+\begin{lstlisting}[language=Python, caption={python state stored and mutated on the object}, label={lst:python-state-mutation}]
+self.inSTRUCT = False
+self.inSEQ = False
+self.seqForSEQ = ""
+self.inName = ""
 
+case [pid,'SEQ',name]:
+    self.inSEQ = True
+    self.seqForSEQ = ""
+    self.inName = name
 
-**1) How a SPIN line is handled**
+case [pid,'SCALAR','_',value]:
+    self.seqForSEQ = self.seqForSEQ + " " + value
+\end{lstlisting}
 
-Before (stringly‑typed, big `case` on raw tokens):
-```haskell
-refineSPINLine :: [Text] -> RuntimeState -> RuntimeState
-refineSPINLine spinLine rt =
-  case spinLine of
-    pidTxt:"CALL":name:args -> ...
-    pidTxt:"WAIT":value:[] -> ...
-    -- many more cases
-```
+in the python version the state lives on the command object. as each spin line is read these values are updated in place, and later branches depend on whatever earlier branches left behind.
 
-After (parse once → typed opcode):
-```haskell
-parseSpinLine :: [Text] -> SpinOp
-parseSpinLine tokens = ... -- OpCall, OpWait, OpInit, etc.
+\paragraph{haskell state made explicit}
+\begin{lstlisting}[language=Haskell, caption={explicit runtime state in the haskell refiner}, label={lst:haskell-runtime-state}]
+data RuntimeState = RuntimeState
+  { rtInSTRUCT :: Bool
+  , rtInSEQ :: Bool
+  , rtSeqForSEQ :: Text
+  , rtInName :: Text
+  , rtDefCode :: [Text]
+  , rtDeclCode :: [Text]
+  , rtTestCodes :: [(Int, [Text])]
+  , rtCurrentId :: Int
+  , rtSwitchNo :: Int
+  }
+\end{lstlisting}
 
-refineSpinOp :: SpinOp -> Refine ()
-refineSpinOp op =
-  case op of
-    OpCall pid name args -> ...
-    OpWait pid value -> ...
-```
+the same information is still present, but it is now grouped into one explicit record. rather than hidden mutation on an object, each function takes a state and returns the next one.
 
-**2) State management**
-
-Before (manual threading):
-```haskell
+\paragraph{one spin line producing the next state}
+\begin{lstlisting}[language=Haskell, caption={processing one SPIN line by returning a new state}, label={lst:haskell-state-pipeline}]
+refineSPINLineMain :: [Text] -> RuntimeState -> RuntimeState
 refineSPINLineMain ln rt0 =
   let rt1 = collectPIdsTokens ln rt0
       rt2 = if outputSWITCH (rtFlags rt1) then switchIfRequired ln rt1 else rt1
       rt3 = if annoteComments (rtFlags rt2) then logSPINLine ln rt2 else rt2
   in refineSPINLine ln rt3
-```
+\end{lstlisting}
 
-After (single pipeline in a state monad):
-```haskell
-refineSPINLineMain ln rt0 =
-  execRefine (refineLine ln) rt0
-  where
-    refineLine tokens = do
-      collectPIdsTokens tokens
-      flags <- getsR rtFlags
-      when (outputSWITCH flags) (switchIfRequired tokens)
-      when (annoteComments flags) (logSPINLine tokens)
-      refineSpinOp (parseSpinLine tokens)
-```
+this is the clearest expression of the change in approach. instead of one long lived object being updated in place, each stage produces a fresh version of the runtime state before the next stage runs.
 
-**3) Safety of list access**
+\paragraph{sequence handling as an explicit transition}
+\begin{lstlisting}[language=Haskell, caption={sequence state handled as an explicit transition}, label={lst:haskell-sequence-state}]
+_pidTxt:"SEQ":name:[] ->
+  rt { rtInSEQ = True, rtSeqForSEQ = "", rtInName = name }
 
-Before: `head`, `!!` used in a few spots.  
-After: replaced with pattern matching in `parseSpinLine` and rendering.
+_pidTxt:"SCALAR":"_":value:[] ->
+  rt { rtSeqForSEQ = rtSeqForSEQ rt <> " " <> value }
+\end{lstlisting}
 
-**4) Output accumulation**
-
-Before: appending to lists (costly).  
-After: prepending + reversing once at render time.
-
----
+sequence handling was where this change felt most useful. in this context a sequence is just an ordered run of values collected between SEQ and END and later emitted through a matching _SEQ template. in the haskell version entering that mode and accumulating those values are both visible directly in the returned state.
 
 
 
