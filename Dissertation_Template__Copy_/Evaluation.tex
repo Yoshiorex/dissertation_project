@@ -1,0 +1,29 @@
+\chapter{Evaluation}
+\label{chap:Evaluation}
+
+The Evaluation chapter should present a comparison of the work that forms the basis of the dissertation and existing work. At a higher level, it should demonstrate an awareness of the relationship of the dissertation work to the research area that it is based in.
+
+
+The Rtems operating system already had test suites created by hand that were deemed satisfactory by checkers //figure out who they are
+the model checker test generation aimed to create a test suite on par with this standard and whne it was checked it was deemed satisfactory.
+
+Therefore the bar that has been set for this project is to maintain the quality of the genertated test suite and not introduce any manual adjustements into the work flow.
+
+to measure this in concrete terms, i will generate test code for all seven models included in the repository. These models are name barrier-mgr, chains, event-mgr, msg-mgr, sem-mgr, task-mgr, and proto-sem Firstly with the original python and then with my haskell version. the diff script will then be ran on all generated code and any difference at all will be documented. if all files contain no chnages or only changes which do not affect code then this criteria will be a success.
+
+the second way i will evaulate my changes is in a subjective "ease of extension" where i will implement support for a new language for both the original python and the new hasekll and document as honestly as possible how acessible the system feels.
+
+\section{Experiments}
+
+In the case where experiments have been carried out, the experimental setup and the values that were defined for the variables need to be presented in a table e.g. table~\ref{tab:experimentsetup}.
+
+//maybe put the implementation of a new feature here, ie the experiment where support for a new language is added both in the python and in the haskell
+
+
+\section{Results}
+
+
+
+\section{Summary}
+
+Every chapter aside from the first and last chapter should conclude with a summary that presents the outcome of the chapter in a short, accessible form. 
