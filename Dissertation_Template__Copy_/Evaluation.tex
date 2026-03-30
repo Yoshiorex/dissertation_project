@@ -1,29 +1,25 @@
 \chapter{Evaluation}
 \label{chap:Evaluation}
 
-The Evaluation chapter should present a comparison of the work that forms the basis of the dissertation and existing work. At a higher level, it should demonstrate an awareness of the relationship of the dissertation work to the research area that it is based in.
+this chapter evaluates the work against the original aim of the dissertation. because the original python generator was already capable of producing satisfactory RTEMS tests, the question here is not whether the haskell port creates a better test suite, but whether it preserves the existing one while fitting into the same workflow.
 
-
-The Rtems operating system already had test suites created by hand that were deemed satisfactory by checkers //figure out who they are
-the model checker test generation aimed to create a test suite on par with this standard and whne it was checked it was deemed satisfactory.
-
-Therefore the bar that has been set for this project is to maintain the quality of the genertated test suite and not introduce any manual adjustements into the work flow.
-
-to measure this in concrete terms, i will generate test code for all seven models included in the repository. These models are name barrier-mgr, chains, event-mgr, msg-mgr, sem-mgr, task-mgr, and proto-sem Firstly with the original python and then with my haskell version. the diff script will then be ran on all generated code and any difference at all will be documented. if all files contain no chnages or only changes which do not affect code then this criteria will be a success.
-
-the second way i will evaulate my changes is in a subjective "ease of extension" where i will implement support for a new language for both the original python and the new hasekll and document as honestly as possible how acessible the system feels.
+the evaluation therefore focuses on two things. the first is output parity between the python and haskell refine command across the seven models listed in the repository: barrier-mgr, chains, event-mgr, msg-mgr, sem-mgr, task-mgr, and proto-sem. the second is workflow compatibility, meaning that the haskell version can be used in the existing pipeline without manual fixes. a second experiment on ease of extension had originally been planned, but was not completed in time and is therefore treated as discussion rather than evidence.
 
 \section{Experiments}
 
-In the case where experiments have been carried out, the experimental setup and the values that were defined for the variables need to be presented in a table e.g. table~\ref{tab:experimentsetup}.
+for each of the seven models, test code is generated once with the original python refine command and once with the haskell version. the generated files are then compared using the diff script. any differences are examined and classified as either semantic differences, which change the meaning of the generated test, or non-semantic differences, such as formatting.
 
-//maybe put the implementation of a new feature here, ie the experiment where support for a new language is added both in the python and in the haskell
+the run is counted as successful only if no manual intervention is required and any remaining differences do not affect the meaning of the generated test. this makes the evaluation narrow, but it matches the central risk of the project, which is regression in generated output rather than raw performance.
 
 
 \section{Results}
+
+this gives a clear success criterion for the dissertation. if the haskell refiner can be substituted into the existing workflow and still generate equivalent tests for the full model set, then the main aim of the project has been met. this does not by itself prove that the new code is easier to extend. that claim is supported more weakly by the implementation itself, particularly the clearer handling of state and the separation between parsing and refinement.
+
+the incomplete extension experiment is therefore a limitation of the evaluation. the project can make a strong claim about behavioural preservation, but only a weaker argued claim about maintainability.
 
 
 
 \section{Summary}
 
-Every chapter aside from the first and last chapter should conclude with a summary that presents the outcome of the chapter in a short, accessible form. 
+the evaluation is based primarily on behavioural preservation. the important question is whether the haskell refiner can replace the python one without changing the generated tests or requiring manual adjustment to the workflow. this is a narrower evaluation than originally planned, but it is also the one most closely tied to the main aim of the project.

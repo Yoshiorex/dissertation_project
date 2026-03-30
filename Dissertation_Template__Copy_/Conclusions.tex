@@ -1,12 +1,20 @@
 \chapter{Conclusions \& Future Work}
 \label{chap:Conclusions}
 
-This chapter should summarize the work presented in the dissertation and discuss the conclusions that can be drawn from the work and the results presented in chapter~\ref{chap:Evaluation}.
+this final chapter draws together the outcome of the dissertation and outlines the most useful directions for later work.
+
+
+\section{Conclusions}
+
+this dissertation set out to examine whether the most difficult part of the testbuilder pipeline could be ported from python to haskell without losing the behaviour of the original system. the work showed that a gradual porting strategy was the correct choice for this problem. because refine command is stateful and tightly coupled to the rest of the pipeline, replacing it all at once would have carried a much higher risk of large regressions. the bridge and diff based workflow reduced that risk by allowing the haskell code to be checked continuously against the python version.
+
+the main contribution of the project is therefore not just a second implementation of refine command, but a practical method for replacing part of an existing formal methods toolchain in a controlled way. the project also showed that the port only became worthwhile once it stopped imitating the python structure line by line and started using more natural haskell techniques, particularly explicit state handling and clearer decomposition of the refinement logic.
+
+the main limitation of the work is that the evaluation is much stronger on behavioural preservation than on ease of extension. the code structure suggests that the haskell version is easier to reason about and maintain, but that part was argued from the implementation rather than demonstrated through a dedicated experiment.
 
 
 \section{Future Work}
 
-The section may present a list of items that were beyond the scope of the dissertation.
+while not as crucial as the porting of the refine-command file, it was originally planned to port spin2test to haskell as well. this would simplify the communication between spin2test and refine command by removing the current dependence on standard input and output messages passed through the bridge. at present the bridge file and refine command are constantly sending back and forth commands and results. in contrast testbuilder launches spin2test once and then lets it read the necessary .spn, yaml and template files itself. moving this part of the system as well would reduce the amount of fragile cross language coordination and likely make the whole pipeline easier to maintain.
 
-While not as crucial as the porting of the refine-command file,it was originally planned to port spin2test to haskell as well. This would be done as the communication from spin2test to refine command would be vastly simplified, negating the need for the fragile standard input/output type communication that is currently employed. the bridge file and refine command are constantly sending back and forth commands and results. 
-in contrast testbuilder launches spin2test once and then lets it read the necessary .spn yaml  and three template files itsel
+another useful piece of future work would be a more direct evaluation of maintainability. the clearest version of this would be to add a new output language or a new annotation type in both systems and compare the amount and complexity of the changes required. that was beyond the scope of this dissertation, but it would test the maintainability claim more directly.
