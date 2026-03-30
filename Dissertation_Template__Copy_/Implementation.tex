@@ -1,70 +1,68 @@
 \chapter{Implementation}
-\lstset{language=Python, captionpos=b, frame=single}
-\captionsetup{width=.8\linewidth} 
+\label{chap:Implementation}
+\lstset{language=Python}
+\captionsetup{width=.8\linewidth}
 
-
-Guess what? At the beginning of each chapter, a description should introduce the reader to the content of the chapter. The description should explain to the reader the layout of the chapter, the contribution that the chapter makes to the overall dissertation and the contribution of the individual sections towards the overall chapter.
-
+This chapter describes how the design of the previous chapter was realised in the repository. It explains the staged transition from the original Python refiner to the Haskell version, the supporting bridge and diff-based workflow used to keep the port testable, and the point at which the implementation stopped being a direct translation and became a more Haskell-native rewrite.
 
 \section{Overview of the Solution}
 
-%% Short caption for the table of listings - long caption for the explanation for the reader
+The implementation followed a gradual transition from the original Python refiner to a Haskell refiner while keeping the rest of the pipeline recognisable. The main files involved were \texttt{pure\_python\_refine\_command.py}, \texttt{spin2test.py}, \texttt{combined\_haskell\_bridge.py}, and the new \texttt{refine\_command.hs}. The objective was not to replace everything at once, but to replace the refinement stage in a way that could be checked end to end against the old behaviour.
 
+A full rewrite from the start would have been risky. The refiner is small enough to look manageable, but it contains many state-dependent branches and many points where template expansion affects the final test file. Reaching the end of a full rewrite before comparing outputs would therefore have made it difficult to localise errors. The staged approach reduced that risk by keeping differential comparison in the loop throughout the port.
 
-The guiding principle of the implementation was a gradual transition from pure python code, to pure haskell code for the principle file refinecommand.py. these files are teh files responsible for turning spin trail files generated into test files. traditionally a replacement would be coded in full and then swapped into the system but to the complex stateful nature of the code being converted, a more gradual appraoch was taken where a hybrid pyhton-haskell phase exists in between the two pure states. 
+The testing and debugging effort was directed toward functional equivalence with the Python generator. The Python output already matched the expected RTEMS test structure, so the main implementation question was whether the Haskell version could preserve that observable behaviour while using a clearer internal structure.
 
-This was done as a full rewrite could be a risk, spending a large amount of time and work on an implemetation that would have to be redone. Given the large size of the file and the many stateful branches contained within, doing the whole file at once would not be preferable. Hence why an alternative solution was found. by using a bridge to implement a system where the new haskell file could be tested in the pipeline end to end at every point in its development, any large refactoring effort at the end could be avoiding. It would be replaced instead by much smaller testing and debugging of every function.
+\section{The Implementation}
 
-The testing and debugging were done to lead towards functional equivalence wiht the original python as the python generated tests were confirmed up to the rtems standard for tests.
+\subsection{The Bridge}
 
-The key tools used to do the porting would be The bridge script, the diff script and unit testing.
+During the transition, a bridge layer preserved the historical Python-facing \texttt{command} interface while moving the refinement work behind a subprocess boundary. Python remained responsible for orchestrating the wider pipeline, but Haskell could now be exercised inside that pipeline without forcing an immediate rewrite of every caller.
 
-\section{The implementation}
+Communication was carried entirely through standard input and output. The bridge sends configuration data to the Haskell process, forwards annotation lines one at a time, and finally requests the rendered test body. This arrangement is deliberately plain, but it has two practical benefits: the interface is explicit, and the same messages can be logged or replayed when something goes wrong.
 
-\subsection{The bridge}
-a bridge file is created thats able to decide between the python adn teh haskell refine command. it will first try the hasekll adn if the program doesnt respond with expected results, the python version is fallen back on. it is qutie important in that it also handles all communication with the haskell in this phase. communication is handled entirely via the standard input and output. at this point it was important to maintain classes present in the python implementation in order to not break compatibility.
+\subsection{The Diff Script}
 
-\subsection{The diff script}
-crucial to this porting process was constantly checking the generated test files with the ones generated by teh origianl system. at the beginning it was done with a text comparison website but it quickly became apparent that manually copying and pasting 18 separate test files every time a change was made was a waste of time. so a simple script that performed a diff check on the current generated files against a know standard set of test files was created. 
+A constant part of the porting process was checking the generated test files against the ones produced by the original system. At first this was done manually with an online text comparison tool, but that approach became unworkable once a single change could affect many generated files. A small local diff script therefore became part of the working process.
 
-\includecode{Sample of command line output}{it can be seen here that the diff check has found taht compared to the original file, the generated test file has included a superfluous pair of curly brackets}{lst:snippet}{commandline.py}
+\includecode{Sample of command line output}{Example output from the diff workflow showing a generated file diverging from the reference output. In practice, even a single extra line was worth investigating because small formatting mismatches could indicate a deeper error in template expansion.}{lst:snippet}{commandline.py}
 
-the file picked up on even the smallest change, including a single additioanl white space line. while not every diff foudn was catastrophic, being able to catch these inconsistencies before tehy cascasded was crucial to teh success of the conversion. By cross checking the changes with the reference dictionaries, the files that stored the actual mappings from spin file messages to c test code, i could isolate where issue came arised and in what scenarios it occured. Fixing these issues were as simple as adding additonal cases in refine command in order to account for the edge case.
+The diff-based approach was intentionally strict. It reported trivial whitespace differences as well as genuinely important mismatches. That occasionally produced noise, but it was still useful because it made it harder for a small divergence to go unnoticed and later turn into a larger behavioural discrepancy. In practice, most debugging started from a diff, then moved backwards through the relevant refinement dictionary entry and the code path that emitted it.
 
-unit testing was implemented in refind command.hs early on in order to help figure out why certain changes were occur but they ended up not being particularly helpful. This was because it was easy to test for things like messages coming to and from the bridge, handling basic cases and config file loading, it was very difficult to catch the specific interactions that actually caused spin files to mistranslated.
+Unit tests were also added around the Haskell refiner, but they were less decisive than the end-to-end diff checks. Unit tests were useful for protocol handling, configuration loading, and small local behaviours. They were less effective for the interactions that actually mattered most, where several pieces of state and several refinement templates combined to produce one incorrect line of generated code.
 
+\subsection{Refine Command}
 
-\subsection{refine command}
-this was the main file to be converted. put simply it is the file that takes the output of the model checker and turns it into test code. it does this by taking a line of spin output and matching it via a custom dictionary to a snippet of c code. this custom dictionary stores template c code with gaps where values such as variable names and integers can be substituted in. to do this properly the program also has to keep track of context, for example whether the current output is inside a struct, inside a sequence, or just a standalone value.
+This was the main file to be converted. Its job is to take annotated SPIN output and refine it into concrete test code by matching annotation lines against entries in a model-specific refinement dictionary. Those entries are small templates of C code with placeholders for names, values, and identifiers taken from the trace.
 
-in the beginning python code was converted into haskell code line by line aiming to model the original programs behaviour as closely as possible. but what i found developing this way is that even with multiple passes trying to emulate closer and closer to what the python was doing, generated test code would still differ. what made me stop this approach was realizing that converting this way didnt allow for the leveraging of haskells strengths, rendering the exercise practically pointless. so continuing forward python behaviour was more creatively ported to haskell, using the diff script to ensure that the output never strayed, ensuring functional equivalence if not semantic equivalence.
+At the beginning of the port, the Python code was translated into Haskell as closely as possible. The intention was to keep behaviour stable by keeping the structure stable. What became clear quite quickly, however, was that this strategy made the Haskell version look like Python written in another syntax. It preserved the awkward parts of the original without gaining much clarity from the new language.
 
-the point where i made this realisation to switch approaches was in the managing of state. the program needs to be aware of whether the current output of the model checker is referring to a struct, a sequence, or just a single value, as the dictionaries have different entries for the same model checker output depending on that context. the python version handles this by making its large match statement even larger with branches and nested match statements for each of these states. each branch is picked based on a number of state variables that were constantly being mutated. this certainly worked and could be emulated in the haskell but was clunky, cumbersome to extend and difficult to reason about.
+The turning point came in state handling. The program has to remember whether the current annotation is inside a structure, inside a sequence, or part of ordinary top-level output. The Python version manages this with mutable object fields that are updated as each line is processed. That behaviour can be copied in Haskell, but copying it directly would have reproduced the same difficulty of following how state changes over time.
 
-the new way of approaching this system in a more functional haskelly way was to remove in place state variable mutation and replace it with a state function. this function takes in the previous state, uses it to process one spin line, and then returns a new state, making the state changes explicit. this was the point where the port stopped being a direct copy of the python and started being a haskell program that happened to preserve the same output. what mattered from that point on was not keeping the same internal structure, but keeping the generated test files the same.
+The more Haskell-native approach was to make the state explicit. Instead of mutating fields on one long-lived object, each stage receives a runtime state, transforms it, and returns the next one. At that point the port stopped being a line-by-line translation and became a Haskell implementation that happened to preserve the same outputs. The aim from then on was not structural similarity to the Python source, but behavioural equivalence of the generated tests.
 
-this change shows up most clearly in the following snippets.
+This change is visible in the following snippets.
 
-\paragraph{python state stored and mutated on the object}
-\begin{lstlisting}[language=Python, caption={python state stored and mutated on the object}, label={lst:python-state-mutation}]
+\paragraph{Python state stored and mutated on the object}
+\begin{lstlisting}[language=Python, caption={Python state stored and mutated on the object}, label={lst:python-state-mutation}]
 self.inSTRUCT = False
 self.inSEQ = False
 self.seqForSEQ = ""
 self.inName = ""
 
-case [pid,'SEQ',name]:
+case [pid, "SEQ", name]:
     self.inSEQ = True
     self.seqForSEQ = ""
     self.inName = name
 
-case [pid,'SCALAR','_',value]:
+case [pid, "SCALAR", "_", value]:
     self.seqForSEQ = self.seqForSEQ + " " + value
 \end{lstlisting}
 
-in the python version the state lives on the command object. as each spin line is read these values are updated in place, and later branches depend on whatever earlier branches left behind.
+In the Python version the state lives on the command object. As each SPIN line is read these values are updated in place, and later branches depend on whatever earlier branches left behind.
 
-\paragraph{haskell state made explicit}
-\begin{lstlisting}[language=Haskell, caption={explicit runtime state in the haskell refiner}, label={lst:haskell-runtime-state}]
+\paragraph{Haskell state made explicit}
+\begin{lstlisting}[language=Haskell, caption={Explicit runtime state in the Haskell refiner}, label={lst:haskell-runtime-state}]
 data RuntimeState = RuntimeState
   { rtInSTRUCT :: Bool
   , rtInSEQ :: Bool
@@ -78,10 +76,10 @@ data RuntimeState = RuntimeState
   }
 \end{lstlisting}
 
-the same information is still present, but it is now grouped into one explicit record. rather than hidden mutation on an object, each function takes a state and returns the next one.
+The same information is still present, but it is now grouped into one explicit record. Rather than hidden mutation on an object, each function takes a state and returns the next one.
 
-\paragraph{one spin line producing the next state}
-\begin{lstlisting}[language=Haskell, caption={processing one SPIN line by returning a new state}, label={lst:haskell-state-pipeline}]
+\paragraph{One SPIN line producing the next state}
+\begin{lstlisting}[language=Haskell, caption={Processing one SPIN line by returning a new state}, label={lst:haskell-state-pipeline}]
 refineSPINLineMain :: [Text] -> RuntimeState -> RuntimeState
 refineSPINLineMain ln rt0 =
   let rt1 = collectPIdsTokens ln rt0
@@ -90,10 +88,10 @@ refineSPINLineMain ln rt0 =
   in refineSPINLine ln rt3
 \end{lstlisting}
 
-this is the clearest expression of the change in approach. instead of one long lived object being updated in place, each stage produces a fresh version of the runtime state before the next stage runs.
+This is the clearest expression of the change in approach. Instead of one long-lived object being updated in place, each stage produces a fresh version of the runtime state before the next stage runs.
 
-\paragraph{sequence handling as an explicit transition}
-\begin{lstlisting}[language=Haskell, caption={sequence state handled as an explicit transition}, label={lst:haskell-sequence-state}]
+\paragraph{Sequence handling as an explicit transition}
+\begin{lstlisting}[language=Haskell, caption={Sequence state handled as an explicit transition}, label={lst:haskell-sequence-state}]
 _pidTxt:"SEQ":name:[] ->
   rt { rtInSEQ = True, rtSeqForSEQ = "", rtInName = name }
 
@@ -101,12 +99,9 @@ _pidTxt:"SCALAR":"_":value:[] ->
   rt { rtSeqForSEQ = rtSeqForSEQ rt <> " " <> value }
 \end{lstlisting}
 
-sequence handling was where this change felt most useful. in this context a sequence is just an ordered run of values collected between SEQ and END and later emitted through a matching _SEQ template. in the haskell version entering that mode and accumulating those values are both visible directly in the returned state.
-
-
-
+Sequence handling was where this change felt most useful. In this context a sequence is an ordered run of values collected between \texttt{SEQ} and \texttt{END} and later emitted through a matching \texttt{\_SEQ} template. In the Haskell version, entering that mode and accumulating those values are both visible directly in the returned state.
 
 \section{Summary}
 
-Every chapter aside from the first and last chapter should conclude with a summary. 
+The implementation was successful because it kept verification in the loop while the internal structure changed. The bridge kept the surrounding Python pipeline stable, the diff script exposed regressions quickly, and the Haskell refiner could then be reorganised into an explicit-state design without losing confidence in the generated output.
 

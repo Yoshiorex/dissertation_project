@@ -1,64 +1,48 @@
 \chapter{Design}
 \label{chap:Design}
 
-At the beginning of each chapter, a description should introduce the reader to the content of the chapter. The description should explain to the reader the layout of the chapter, the contribution that the chapter makes to the overall dissertation and the contribution of the individual sections towards the overall chapter.
-
+This chapter turns the background of the previous chapter into concrete design decisions. It defines the specific problem within the existing RTEMS toolchain, identifies the constraints that any replacement must satisfy, and explains the bridge-based design used to introduce Haskell gradually rather than by one large swap.
 
 \section{Problem Formulation}
 \label{sec:ProblemFormulation}
 
-This section should provide the reader with an overall description of the problem that will be addressed in the dissertation. In contrast to a generic discussion of the dissertation topic in the Introduction chapter, this section should provide a detailed discussion of the problem that has been identified based on the existing work that has been discussed in the preceeding chapter. 
+The problem addressed by this dissertation is not that the existing generator failed to produce useful RTEMS tests. The problem is that one central stage of the pipeline, the Python refiner, became difficult to restructure safely as the project grew. The \texttt{testbuilder} workflow already had working Promela models, a working SPIN-based exploration stage, and working C test generation. Changing the refiner therefore meant changing the part of the system where the risk of regression was highest.
 
-In some dissertations, it may make sense to convert this section into a short chapter of its own which follows the discussion of the existing work and preceeds the discussion of the work of the dissertation.
+The existing Python refiner combines several kinds of work in one place. It parses annotation lines, tracks context such as whether refinement is currently inside a \texttt{STRUCT} or \texttt{SEQ}, performs lookups in a refinement dictionary, and accumulates generated code fragments. This arrangement works, but it makes it harder to reason locally about how one line of input affects the next state of the translation.
 
-
-
-The problem to be addressed by this dissertation is the difficulty of extending and maintaining the codebase of the testbuilder program due to the fact that it is written in python. the testbuilder program is the program that takes a formal model of a RTEMS system and turns it into C test code. python excelled during the creation of the testbuilder program due to its easy use for quick protoyping and smooth iterations. the testbuilder was able to be rapidly developed within the time constraints of an academic year. 
-
-Unfortunately now that the system is written entirely in python, it means that certain parts of the system are difficult to extend. specifically spin2test.py and the module it relies on, refinecommand.py. Due to the imperative style that the program was written in, the refine_command program has numerous elements that make it difficult to alter.
-
-1. mutable state
-the python in refine_command makes extensive use of state and mutable state attributes for tracking things like whether a spin line is written in the context of being in a struct or as a standalone line. this makes the flow of data and tracking the state through a function difficult to follow and harder to reason about. altering an existing variable means contending with the delicate state setup. 
-
-2.non exhaustive pattern matching
-in the main part of the code, where spin lines turn into test code, extensive use of the match keyword is used. this is used to match the spin line to the correct test code. this system works but python doesn't enforce completeness and the catch all "case:_" at the end matches for any cases not accounted for in the code. this is not ideal coding, it hides potential bugs and makes it easy to forget to handle a new annotation type. 
-
-3.mix of concerns
-the python includes a monolithic main method of 150 lines which suffers from a mix of concerns. it handles Keyword-specific logic, State updates (e.g., toggling inSTRUCT), Lookups in ref_dict, Code accumulation (via addCode, defCode, declCode). this makes it more difficult to alter the code and test specific pieces of logic.
+Three properties of the original implementation were especially important. First, context is stored as mutable object state. Second, the main refinement function handles many annotation forms in one place. Third, template expansion and code accumulation are interleaved with control flow. Each of these is manageable in isolation, but together they make structural changes riskier than they need to be.
 
 \subsection{Identified Challenges}
-This section should present a short description of the gaps in the existing work and the relationship of these gaps to the work described in this dissertation.
 
-There currently is a gap in the literature looking at integrating Haskell into existing databases, especially the combination of Haskell and python. as evidenced by the multiple implementations of interfaces between python and haskell as described in the literature review, there exists a desire to combine the two and this warrents an examination of the strenghs of a python-hasekll system.
+The first challenge was behavioural preservation. The repository already contained working models and a working Python refiner. A replacement could only be justified if it produced the same observable output for the existing model set.
 
-Additionally, the method of refactoring/ translating a program within a larger system, using a bridge to choose between the orignal script and the converted script, has not been covered in a major research paper. It has the potential to infer significant benefits to large developement projects
+The second challenge was integration. The refiner is not a standalone tool. It is called from the existing Python pipeline and depends on YAML refinement dictionaries, language templates, and per-model header fragments. Any design therefore had to fit around those existing inputs rather than invent a new workflow.
+
+The third challenge was scope control. Replacing the entire pipeline at once would have made it difficult to distinguish language-porting issues from unrelated tooling issues. A narrower design was needed so that the hardest stateful component could be rewritten first and checked continuously against the original behaviour.
 
 \subsection{Proposed Work}
-This section should provide a thorough description of the problem and an overview of the work proposed to address the problem.
-Haskell will be leveraged to solve the problems listed above in an elegant way.
-1. Mutable states
-haskell requires purity in its functions. every input maps to exactly one output. this allows for clear local reasoning and makes the program flow transparent.
 
-2. non exhasutive pattern matching
-haskells compiler requires completeness so having a non comprehensive match function isnt even possible. you are required to cover all cases and when adding new annotation types you have a built in reminder to build in test cases.
+The design adopted in this dissertation is a staged port of \texttt{refine\_command}. The Haskell implementation keeps the same external role as the Python one: it receives tokenised annotation lines, updates its refinement state, and eventually renders a test body. The surrounding Python code is retained so that existing configuration files, model assets, and generation scripts can continue to drive the process.
 
-3. mix of concerns
-haskell specialises in decomposing functions into smaller more atomic functions. side effects are not allowed and functions are allowed to be passed and retunred to higher order functions, increasing the readability and reusability of the code.
-
-
-a functional language, like Haskell, is the clear choice for refactoring this program because it's using a python superset called coconut. this superset compiles to python and all valid python syntax is valid coconut. what it does is add functional programming constructs like pattern matching to python. eventually python would add pattern matching in python 3.10 but the functional aspects remained and so when reworking the code, it makes sense use a language like Haskell so full advantage can be taken of functional programming, such as lazy evaluation and functional purity, aspects not in coconut
-r
+The central design decision is therefore not only to use Haskell, but to introduce it behind a bridge that preserves the historical Python-facing interface. That keeps the migration incremental. The new implementation can be checked with the same inputs as the old one, and output differences can be detected before they spread into the rest of the workflow.
 
 \section{Overview of the Design}
 \label{sec:OverviewOfDesign}
-A description of the approach that addresses the problem identified above.
 
-Due to the fact that the files to be changed exist within a larger codebase, of which the workings are complex and multifaceted, a careful approach will be taken to the conversion of the files. To avoid the issues found with multilingual developement, such as difficulty with data flows and intepreting errors, i will be implementing a bridge program. this bridge will have the purpose of selecting between the original python code and the new haskell code as the code is converted. in the beginning the bridge will choose only the original python but then on a function by function bsais, will startusing the haskell. this approach allows the continous comparision of the programs output with the ouput of the pure python in order to ensure parity.
-The system allows for constant end to end testing, which is the important for a system with exisitng functionality, as unit testing specific functions, making sure they work the same, limits how much the program can be altered in strucutre and semantics. by testing end to end the program can be radically reorganised in order to make use of haskell unique features, wihtout falling into the trap of replicating the original python and creating a "imperative like" prgoram in haskell.
+The overall design separates the system into three logical parts: SPIN produces annotated traces from Promela models, the bridge passes those annotations and configuration data to the Haskell refiner, and the existing Python-side tooling assembles the final test files around the rendered body. This decomposition isolates the port to the refinement stage while leaving the rest of the pipeline stable.
 
+A line-oriented protocol was used between Python and Haskell because it made the interface explicit and easy to inspect. The bridge sends an initial JSON configuration, then a sequence of refinement commands, and finally requests the rendered test body. The protocol is simple enough to log and replay, which proved useful during debugging.
 
-to ensure parity the whole way through, an automated script will be developed to systematically perform a differential check on all generated files when a change is made
+\begin{lstlisting}[caption={Simplified bridge protocol between Python and Haskell}, label={lst:bridge-protocol}]
+INIT JSON:{...}
+COMMAND:setupLanguage
+COMMAND:refineSPINLine:["4", "CALL", "WaitForSuspend", "2", "resumeRC"]
+COMMAND:testBody
+\end{lstlisting}
+
+This design also made differential checking a first-class part of the project rather than an afterthought. Because the Haskell refiner could be exercised with the same traces as the Python original, text diffs on generated tests became the main feedback loop. That in turn made it possible to move from a line-by-line translation strategy to a more Haskell-native design without losing confidence in the observable output.
+
 \section{Summary}
 \label{sec:SummaryDesign}
 
-Every chapter aside from the first and last chapter should conclude with a summary. 
+In summary, the design of the dissertation is conservative at the system boundary and experimental inside the refiner itself. The boundary stays stable so that behaviour can be checked continuously, while the implementation behind that boundary is free to adopt a clearer Haskell structure.

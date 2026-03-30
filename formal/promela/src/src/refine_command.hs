@@ -113,11 +113,13 @@ replaceFirst needle repl txt =
 -- Template formatter supporting both {0} indexed and {} sequential forms.
 formatTemplate :: Text -> [Text] -> Text
 formatTemplate template args =
-  let indexed = L.foldl'
-        (\acc (i, arg) -> T.replace ("{" <> tshow i <> "}") arg acc)
-        template
-        (zip [0 :: Int ..] args)
-  in L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
+  let indexed =
+        L.foldl'
+          (\acc (i, arg) -> T.replace ("{" <> tshow i <> "}") arg acc)
+          template
+          (zip [0 :: Int ..] args)
+      formatted = L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
+   in T.replace "}}" "}" (T.replace "{{" "{" formatted)
 
 -- Resolve language YAML path relative to the executable directory.
 findLanguageFile :: String -> IO (Maybe FilePath)

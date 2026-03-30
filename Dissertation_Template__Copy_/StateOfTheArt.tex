@@ -1,154 +1,62 @@
 \chapter{State of the Art}
+\label{chap:StateOfTheArt}
 
-At the beginning of each chapter, a description should introduce the reader to the content of the chapter. The description should explain to the reader the layout of the chapter, the contribution that the chapter makes to the overall dissertation and the contribution of the individual sections towards the overall chapter.
+This chapter positions the dissertation within the background work that made the project possible. It first reviews model-checker-based test generation and the RTEMS-specific context, then discusses the functional programming ideas that motivate the use of Haskell, and finally considers the practical problems of combining Python and Haskell inside one toolchain.
 
-From the perspective of this document forming part of your degree, this chapter should demonstrate to the reader your knowledge of the area of your dissertation project. It should present your knowledge in a coherent and detailed form. The reader should understand that you have in-depth knowledge of the area of the dissertation without being overloaded with information.
+\section{Model Checking and Test Generation}
 
-\section{Background}
+Model checking is normally presented as a verification technique, but in this project it is used in a more operational way. SPIN explores the Promela model, produces counterexample traces when assertions are violated, and those traces are then treated as structured test scenarios rather than as the final result. The important point for this dissertation is that the generated test cases do not come directly from the model checker alone. They depend on a second translation stage that maps annotated SPIN output onto RTEMS-oriented test code.
 
-A section on the background of the dissertation should provide the reader with an introduction to existing technologies and concepts that form the basis of the
-work presented in the dissertation.
+That distinction matters because the dissertation does not replace the modelling or exploration stages. The Promela models, SPIN search, and RTEMS test structure already existed. The difficult engineering problem is the refinement step in the middle: reading annotation lines such as \texttt{CALL}, \texttt{STATE}, \texttt{STRUCT}, and \texttt{SEQ}, tracking enough context to interpret them correctly, and emitting the right C fragments in the right order.
 
-\subsection{Functional Programming}
-  \href{https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf}{Why Functional Programming Matters} [1]
-    This paper details the benefits of functional programming. Specifically it is said that they have greater capacity for modular design and that the paradigm of lazy evaluation in functional languages allow for simpler code. The reasons detailed within drove the motivation to convert from Python to Haskell  
+A broader example of the same general idea appears in the work of Zheng et al. \citep{zheng2007model}. They use model checking to derive tests for service behaviour described in BPEL-style models. The domain is different from RTEMS, and the modelling formalism is different from the Promela workflow used here, but the wider pattern is similar: model checking is used to systematically derive execution scenarios, and a second stage turns those scenarios into executable tests. That makes this dissertation easier to place in a broader test-generation tradition rather than treating it as an isolated RTEMS-specific toolchain.
 
-    The reason given for why functional languages have greater capacity for modular design is through their ability to take functions as arguments to other functions.
-    Side effects not being allowed in functional languages create a system where every function has a single well defined output. functions are inputted to other functions rather than have a function do multiple jobs. this allows for the easy modification of lower level functions and higher order functions do not need to worry how the lower levels work, they can be treated as black boxes. when all functions have very specific jobs, they can be reused far more often than a function performing multiple jobs, hence improving modularity.
+\section{Functional Programming and Haskell}
 
-    Lazy evaluation is a powerful principle. values are only computed when needed. infinite series can be generated and the selectors will compute only the values needed. additionally this separation of generation and selection further improves the modularity of the system. this is a very useful property of these languages for this project in particular, as for this test generation system it allows for generation of a very large number of tests without of running out of memory.
-    An example of lazy evaluation being helpful is in evaluating the newton-raphson approximation of square roots. the process is an inherently infinite convergent algorithm where each approximation is better than the last. an imperative langauge would cut off the loop when two approximation differ by no more than some predefined value. Lazy evaluation however allows for the infininite series to be mapped, and then taken to any level of precision once a function calls for it.
+A useful starting point for the Haskell side of the project is Hughes's argument that modularity is one of the strongest practical benefits of functional programming \citep{hughes1989why}. That is directly relevant here because the refiner is a transformation stage: it reads one representation of behaviour and incrementally builds another. A style that makes intermediate state and data flow explicit is therefore attractive, especially when behaviour must be preserved while the internal structure changes.
 
-    Hughes' arguments were influential in justifying the decision to change part of the codebase to be functional. the increased modularity would aid extending the codebase
-    
-\vspace{25}
-\href{https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/history.pdf}{A History of Haskell} 
-clearly gives a way to write about haskell and its history background and relevance/use to a project like this, more justificaiton for its use
+That argument is useful here mainly because the refiner is full of small, state-dependent transformations. The code does not need a language chosen for novelty; it needs a language whose normal style encourages clearer composition and more local reasoning. In that sense the appeal of functional programming in this dissertation is practical rather than abstract. The main benefit is not that the program becomes mathematically elegant, but that the steps by which one annotation line changes the next runtime state can be expressed more directly.
 
-Use it to explain why you chose Haskell:
+The project also draws on the general history and design goals of Haskell, summarised by Hudak et al. \citep{hudak2007history}. Haskell's combination of strong static typing, algebraic data types, pattern matching, and purity by default makes it well suited to programs that perform structured translation. Those properties do not automatically make the code correct, but they encourage an implementation style in which cases are more explicit and state changes are easier to trace.
 
-     Strong static typing and type classes ensure your language backends are complete at compile time.
-     Purity and modularity make it easier to reason about transformations from SPIN output to abstract test actions.
+That history is also relevant because it frames Haskell as a language designed to support reusable abstraction and a clear common standard, rather than as a niche experiment. For this dissertation that matters because the port is not trying to prove that Haskell is universally better than Python. It is simply using a language whose usual tools fit a translation problem well: explicit data modelling, case analysis, and a clearer separation between pure transformation and boundary-facing input and output.
 
-Haskell was created at a time where there was a dozen non-strict, functional programming languages in circulation. A conference was was held and it was decided that the lack of a common language was hampering widespread adoption of these class of languages. to remedy this, the committe decided on the creation of a language to unite the space.
-the specific principles decided upon at this committee are responsible for its utility to the project at hand. The benefits talked about above still apply due to its nature as a funcitonal programming language but additionally, haskell in particular has its own advantages such as
+For this dissertation, the important benefit is not lazy evaluation in the abstract, but the ability to reorganise a stateful Python program into a pipeline of smaller transformations. The Haskell refiner still performs the same job as the Python original, but it can express that job as a sequence of functions over an explicit runtime state rather than as a large mutable object.
 
-Purity by default
-    other funcitonal languages (Lisps, Scheme, Clojure), have purity as style, side effects are allowed to be used freely. 
-    in haskell side effects have to programmed explicitly as functions are pure by default.
+\section{Multi-Language Systems}
 
-    this gives the advantages that functions are easier to reason about. just from the type signature you can  know that the function can throw exception or access the outside world by standard input output.
+The project is also part of a broader class of multilingual systems, where one language is introduced into an existing codebase rather than replacing it completely. A recent empirical study by Yang et al. \citep{yang2024multilanguage} highlights interface boundaries, data conversion, and error diagnosis as recurring sources of friction. Those concerns match the experience of this project closely. The main difficulty was not writing isolated Haskell functions, but deciding how Python and Haskell should communicate without making the combined system more fragile than the original one.
 
-    it makes it easier to refactor, as when changing code you dont have to worry about affecting mutable varialbles or changing state in a subtle way.
+This problem shaped the eventual architecture. Instead of a deep foreign-function interface, the project used a narrow subprocess protocol over standard input and output. That choice keeps the boundary explicit. Configuration is passed in as JSON, annotation lines are refined one at a time, and the rendered test body is returned at the end. The approach is less elegant than a direct import, but it is easier to inspect, easier to debug, and better aligned with the existing Python pipeline. It also reflects the main lesson of the multilingual-systems literature in a fairly direct way: once the boundary is explicit, it becomes easier to reason about what data crosses it and where failures should be diagnosed.
 
-Monads
-    monads are the mechanism haskell uses to control side effects and they 
+Two concrete integration options were considered during the project. The HaPy library \citep{fisher2014hapy} suggested a more direct Python-to-Haskell interface by exposing compiled Haskell code to Python, but its documented setup depends on shared-library builds and a limited set of supported exported types. The call-haskell-from-anything library \citep{hambuechen2011callhaskell} explored a more general MessagePack-based boundary over the C foreign-function interface. Both were useful as engineering reference points, but neither was adopted. The repository needed a controlled way to preserve the existing Python API while changing the implementation behind it, and the simpler subprocess boundary turned out to be the safer fit for that requirement.
 
+\section{Closely Related Work}
 
-Type classes and ad hoc polymorphism
-    type classes are a powerful mechanism in haskell in that they allow the programmer to define an abstract interface with mutliple concrete implementations. For this project this manifests as an abstract "test action" with concrete implementations in various different languages.
+The most directly relevant prior work is the earlier dissertation by Ja{\'s}ku{\'c} \citep{jaskuc2022barrier}. That work is important because it establishes the value of the underlying RTEMS/SPIN framework itself. The present dissertation does not need to justify the entire modelling approach from first principles; it builds on an existing system that had already shown that Promela models and SPIN traces could be refined into useful RTEMS tests.
 
-    Type classes are flexible in what fields are allowable. in addition haskell enforces completeness in type classes at compile time. this means that for all fields defined for a type class they must be implemetnted
+The difference in emphasis is therefore clear. The earlier work extended the range and usefulness of the RTEMS modelling framework. This dissertation instead studies the maintainability of one critical part of that framework by replacing the refinement stage with a Haskell implementation. The contribution is not a new manager model or a new coverage result, but a controlled port of the translation logic used by the existing models.
 
-
-
-    
-
-
-\subsection{Multi-Language Systems}
-    https://chapering.github.io/pubs/tse24haoran.pdf
-
-    analyses stack overflow posts to answer what developers find hard about multingual development. I used it to learn about the methods of multingual development and solutions to challenges. it details that language interfacing is the biggest challenge faced. there is two method of interfacing, explicit and implicit. explicit interfacing involves the language invoking functions from the second language in the style of same language imports. implicit interfacing involves indirect methods of communicating eg message queues which is what I am using due to the fact that the explicit interface implementations for Haskell to python were limited as will be talked about later.
-
-the paper also suggest more specific solutions for problems. One thing that the developers found tripped developers up a lot was data mismatches in function calls. the solution was to be explicit with all types to ensure no discrepancies    
-     https://dl.acm.org/doi/abs/10.5555/3370272.3370280?download=true
-
-
-
-     this one doesn't actually let you read it so find another one 
-     two papers that talk about the benefits and challenges of multi language systems
-
-\subsection{automated test generation using model checkers}
-https://openresearch.surrey.ac.uk/esploro/outputs/conferencePresentation/A-model-checking-based-test-case/99516972702346/filesAndLinks?index=0
-this is looking like a paper that does the same sorta thing that andrew butterfields thing does but like way earlier
-
-tjis paper looks at 
-Business Process Execution Language, a language that is used to describe web service composition behaviour.
-due to its use of concurrency and hierarchy, it was difficult to verify manually. so the author came to a similar solution to ourselves and applied model checkers to automatically create test suites. their approach contrasts ours in theat they use NuSMV instead of Promela
-
-
-
-How to tie it in: 
-
-     Use it as a more general example of “model checking as test generator”, not just for your RTEMS context.
-     You can say: just as they use a model checker to derive meaningful test sequences for web services, you use SPIN to generate test sequences for RTEMS, then map those to concrete test code in C/Ada/Rust.
-     
-
-
-          
-\section{Closely-Related Work}
-
-Work in research areas tends to address a number of specific aspects. Ideally, the discussion of published research should focus on the aspects that have been addressed by various publications - and not a discussion of the individual publications.
-
-For example, if the topic would be a discussion of work on programming languages, the subsections of the related work could be discussions of object orientation and its realisation in various languages or the use of lambda functions by these languages.
-
-\item[\href{https://publications.scss.tcd.ie/theses/diss/2022/TCD-SCSS-DISSERTATION-2022-016.pdf}{SPIN/Promela-Based Test Generation Framework for RTEMS Barrier Manager}] [2]
-    This dissertation details previous work on the system I am currently working on. The author's contributions included improving the existing test generation framework, successfully modelling the barrier manager in RTEMS with Promela, and generating a 100\% coverage test suite for the barrier manager. This paper provided significant insight into how the system operates.
-
-    The author identified RTEMS as a good target for formal modelling and test generation due to the fact that RTEMS as a codebase is large, having been worked on for over 30 years. as well as this, due to the fact that RTEMS was originally designed for uniprocessor systems, the test coverage for RTEMS on multi processor systems was less complete. Seeing this they saw it as a  target for the application of Promela/Spin modelling. They modelled the software in Promela and then had Spin output situations where the system fails. this is where the author steps in and created a tool that takes the output, refines it using a custom dictionary that matches specific output phrases and matches them to test code, creating a complete test file for the manager.
-
-    Reading this I came to understand the significance of the RTEMS operating system and the importance of ensuring adequate testing. reading through it gave me the background needed to understand where the test suite generation excelled at and where it could be extended. the system was created to create tests in C. Looking at the codebase it can be seen that in many places, c specific test code is hard coded in. In view of this, my project will look to allow for greater flexibility of test code output by allowing for a language other than c to be used.
-
-https://github.com/ddfisher/HaPy
-an iniatllay very promising library that seeks to perform the exact function i needed to make this integration work, calling haskell function from python as a normal importable module. This seemed ideal until further reading of the github reveals that only basic data types are supported, so dicts and the like would not be possible to be exported with this 
-// tho note to myself to look at later, do i even need to export the ref dicts, as far as i can remember they are just used as inputs, must ask the ai
-
-
-https://github.com/nh2/call-haskell-from-anything
-this uses an interesting system of wrapping up functions arguments and return values into MessagePacks to export via the C FFI built into haskell, seeks to improve on the base usage of the FFI by simplifying it and extending it to work for any language with an implementation of MessagePacks
-\subsection{Aspect \#1}
-
-
-\subsection{Aspect \#2}
-
-
- 
-
-
-
-
-
-
-    Connect “Why Functional Programming Matters” (Hughes) to your test generation: 
-
-     You already have this, but you can strengthen the link:
-         Hughes’ argument about modularity and higher-order functions aligns nicely with your design where:
-             Lower-level functions parse YAML, handle refinement, and produce abstract test actions.
-             Higher-level functions orchestrate the overall pipeline, treating those stages as black boxes.
-             
-         Lazy evaluation can be mentioned in the context of generating large test suites without exhausting memory (as you already do in your draft).
-         
-
-
-
-
-\section{Summary}
-
-Summarize the chapter and present a comparison of the projects that you reviewed.
-
-\begin{table}[!h]
+\begin{table}[H]
 \begin{center}
-	\begin{tabular}{|l|c|c|} 
-	\hline
- 	\bf  & \bf Aspect \#1  & \bf Aspect \#2 \\
-  	\hline
-	Row 1 & Item 1 & Item 2 \\
-	Row 2 & Item 1 & Item 2 \\
-	Row 3 & Item 1 & Item 2 \\
-	Row 4 & Item 1 & Item 2 \\
-	\hline
-	\end{tabular}
+\begin{tabular}{|p{0.28\linewidth}|p{0.24\linewidth}|p{0.32\linewidth}|}
+\hline
+\textbf{Source} & \textbf{Main Idea} & \textbf{Relevance Here} \\
+\hline
+\emph{Why Functional Programming Matters} \citep{hughes1989why} & Functional programming improves modularity and composition & Motivates the move from implicit mutation toward explicit transformations \\
+\hline
+\emph{A History of Haskell} \citep{hudak2007history} & Explains the design goals of Haskell as a common non-strict functional language & Justifies Haskell as a plausible replacement language for a structured translation stage \\
+\hline
+Yang et al. \citep{yang2024multilanguage} & Identifies interface boundaries and data conversion as common developer difficulties & Motivates the explicit subprocess bridge between Python and Haskell \\
+\hline
+Zheng et al. \citep{zheng2007model} & Uses model checking to derive executable tests from behavioural models & Shows that turning model-checker output into tests is a broader pattern, not just an RTEMS-specific one \\
+\hline
+Ja{\'s}ku{\'c} \citep{jaskuc2022barrier} & Demonstrates the value of the RTEMS/SPIN test-generation framework & Provides the immediate technical context that this dissertation extends \\
+\hline
+\end{tabular}
 \end{center}
-\caption[Comparison of Closely-Related Projects]{Caption that explains the table to the reader}	
-\label{tab:SummaryProjects}
+\caption[Context for the dissertation]{Background sources and closely related work that motivate the technical choices made in the dissertation.}
+\label{tab:state-of-the-art-context}
 \end{table}
+
+In summary, the literature and engineering context suggest two main conclusions. First, the project is well motivated as a study of how model-checker output can be preserved while the refinement stage is restructured. Second, the challenge is not only one of programming language choice, but also one of managing a clear interface between old and new implementations.

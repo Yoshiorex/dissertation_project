@@ -119,6 +119,7 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{float}
+\hypersetup{hidelinks}
 
 %%------------------------------------------------
 %% Listing macros
@@ -129,6 +130,15 @@
 %% \includecode{caption for table of listings}{caption for reader}{filename}
 %% - includes a file with code and adds a caption that should describe the code in some detail and a shorter caption for the table of listings
 \newcommand{\includecode}[4]{\lstinputlisting[floatplacement=H, caption={[#1]#2}, captionpos=b, frame=single, label={#3}]{#4}}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  captionpos=b,
+  frame=single
+}
 
 %%------------------------------------------------
 %% Image macros

@@ -1,25 +1,70 @@
 \chapter{Evaluation}
 \label{chap:Evaluation}
 
-this chapter evaluates the work against the original aim of the dissertation. because the original python generator was already capable of producing satisfactory RTEMS tests, the question here is not whether the haskell port creates a better test suite, but whether it preserves the existing one while fitting into the same workflow.
-
-the evaluation therefore focuses on two things. the first is output parity between the python and haskell refine command across the seven models listed in the repository: barrier-mgr, chains, event-mgr, msg-mgr, sem-mgr, task-mgr, and proto-sem. the second is workflow compatibility, meaning that the haskell version can be used in the existing pipeline without manual fixes. a second experiment on ease of extension had originally been planned, but was not completed in time and is therefore treated as discussion rather than evidence.
+This chapter evaluates the finished port against the main aim of the dissertation. It first explains how output comparison was carried out across the seven active repository models, then reports the differences that were found, including the one substantive task manager mismatch and its fix, and finally discusses what the experiment says about behavioural preservation and workflow compatibility.
 
 \section{Experiments}
 
-for each of the seven models, test code is generated once with the original python refine command and once with the haskell version. the generated files are then compared using the diff script. any differences are examined and classified as either semantic differences, which change the meaning of the generated test, or non-semantic differences, such as formatting.
+The evaluation was based on differential comparison between the original Python refiner and the Haskell refiner. For each of the seven active models in the repository, test code was generated once with the Python version and once with the Haskell version. The resulting files were then compared with a diff-based workflow, and each difference was classified as either semantic, where the generated C code changed meaning, or non-semantic, where only formatting changed.
 
-the run is counted as successful only if no manual intervention is required and any remaining differences do not affect the meaning of the generated test. this makes the evaluation narrow, but it matches the central risk of the project, which is regression in generated output rather than raw performance.
+The original plan was to perform this comparison entirely through the existing workflow. In practice, the repository on this Windows machine required additional setup before the experiment could be completed. SPIN was not on the \texttt{PATH}, the checked-in Haskell executable was not usable on Windows, and the current \texttt{testbuilder} configuration still contained Linux-specific absolute paths. To complete the experiment, SPIN was built locally, a temporary cabal wrapper was used to build a Windows Haskell executable, and the saved \texttt{.spn} files were replayed through a small verification client. This extra work matters to the evaluation because it shows that behavioural preservation is stronger than full workflow portability in the current repository state.
+
+The full comparison nevertheless remained faithful to the intended question of the dissertation. The important issue is not whether the Haskell port is faster or more elegant in isolation, but whether it preserves the test generation behaviour of the Python refiner across the existing model set.
 
 
 \section{Results}
 
-this gives a clear success criterion for the dissertation. if the haskell refiner can be substituted into the existing workflow and still generate equivalent tests for the full model set, then the main aim of the project has been met. this does not by itself prove that the new code is easier to extend. that claim is supported more weakly by the implementation itself, particularly the clearer handling of state and the separation between parsing and refinement.
+The comparison covered all seven active repository models: \texttt{barrier-mgr}, \texttt{chains}, \texttt{event-mgr}, \texttt{msg-mgr}, \texttt{sem-mgr}, \texttt{task-mgr}, and \texttt{proto-sem}. The number of traces compared for each model and the remaining difference type after the final fix are shown in Table~\ref{tab:refine-compare-results}.
 
-the incomplete extension experiment is therefore a limitation of the evaluation. the project can make a strong claim about behavioural preservation, but only a weaker argued claim about maintainability.
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|p{0.22\linewidth}|r|p{0.48\linewidth}|}
+\hline
+\textbf{Model} & \textbf{Trails} & \textbf{Remaining Difference After Final Fix} \\
+\hline
+\texttt{barrier-mgr} & 20 & one extra blank line before the final SPDX footer \\
+\hline
+\texttt{chains} & 21 & one extra blank line before the final SPDX footer \\
+\hline
+\texttt{event-mgr} & 11 & one extra blank line before the final SPDX footer \\
+\hline
+\texttt{msg-mgr} & 18 & one extra blank line before the final SPDX footer \\
+\hline
+\texttt{sem-mgr} & 36 & one extra blank line before \texttt{// Task 0} \\
+\hline
+\texttt{task-mgr} & 19 & one extra blank line before the final SPDX footer \\
+\hline
+\texttt{proto-sem} & 5 & one extra blank line before the final SPDX footer \\
+\hline
+\end{tabular}
+\end{center}
+\caption[Comparison results across the seven models]{Comparison results across the seven models after fixing the substantive \texttt{task-mgr} formatting bug.}
+\label{tab:refine-compare-results}
+\end{table}
+
+This result is slightly more nuanced than simple text equality. Every compared file still differs textually, but after the final fix the remaining differences are all limited to harmless blank lines. For most models the extra line appears immediately before the final SPDX footer. For \texttt{sem-mgr} it appears just before the \texttt{// Task 0} section. These are therefore formatting mismatches rather than behavioural mismatches.
+
+The one substantive difference found during evaluation appeared in \texttt{task-mgr} models 14 and 16. In those files the Python output contained \texttt{do \{ ... \} while (...)} while the Haskell output contained \texttt{do \{\{ ... \}\} while (...)}, which is not valid C. The source of the bug turned out not to be the task manager model itself, but a mismatch between Python \texttt{str.format} semantics and the Haskell template formatter. The refinement dictionary stored literal C braces as doubled braces, and the Haskell formatter replaced placeholders without collapsing \texttt{\{\{} and \texttt{\}\}} back to single braces.
+
+\begin{lstlisting}[language=Haskell, caption={Brace escaping added to the Haskell template formatter}, label={lst:brace-unescape}]
+formatTemplate template args =
+	let indexed =
+				L.foldl'
+					(\acc (i, arg) -> T.replace ("{" <> tshow i <> "}") arg acc)
+					template
+					(zip [0 :: Int ..] args)
+			formatted = L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
+	 in T.replace "}}" "}" (T.replace "{{" "{" formatted)
+\end{lstlisting}
+
+After rebuilding the Haskell refiner and replaying the saved \texttt{task-mgr} \texttt{.spn} files, the doubled-brace mismatch disappeared. Models 14 and 16 then reduced to the same blank-line-only difference seen elsewhere. This is an important result for the dissertation because it shows that the diff workflow did not merely report mismatches; it also isolated one concrete defect and guided it to a specific fix.
+
+The comparison therefore supports the main claim of the project more strongly than the workflow claim. Behavioural preservation is well supported across the full model set. Workflow compatibility is only partially supported in the current repository state because the Windows experiment still required manual setup and a temporary local build of the Haskell executable.
+
+The incomplete extension experiment remains a limitation of the evaluation. The project can make a strong claim about behavioural preservation, but only a weaker argued claim about maintainability. The implementation suggests that explicit state and clearer decomposition make the Haskell version easier to reason about, but that claim was not tested by a dedicated change task.
 
 
 
 \section{Summary}
 
-the evaluation is based primarily on behavioural preservation. the important question is whether the haskell refiner can replace the python one without changing the generated tests or requiring manual adjustment to the workflow. this is a narrower evaluation than originally planned, but it is also the one most closely tied to the main aim of the project.
+The evaluation shows that the Haskell refiner preserves the behaviour of the Python version much more strongly than it preserves turnkey workflow compatibility on Windows. One substantive task manager bug was found, traced to template brace escaping, and fixed. After that repair the remaining differences across all seven models were non-semantic blank lines, which means the dissertation can make a strong claim about output preservation while still acknowledging the remaining setup work around the surrounding toolchain.

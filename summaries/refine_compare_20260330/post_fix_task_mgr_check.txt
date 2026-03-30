@@ -1,0 +1,17 @@
+Post-fix task-mgr verification
+
+The Haskell formatter in formal/promela/src/src/refine_command.hs was updated to
+collapse doubled braces after placeholder substitution, matching Python
+str.format behaviour.
+
+Verification method
+- rebuilt a temporary Windows Haskell executable from the updated refiner
+- replayed all 19 saved task-mgr .spn files from summaries/refine_compare_20260330/task-mgr/spin
+- regenerated Haskell outputs into summaries/refine_compare_20260330/task-mgr/haskell-fixed
+- compared those files against the saved Python outputs in summaries/refine_compare_20260330/task-mgr/python
+
+Result
+- 19 task-mgr cases rechecked
+- 0 remaining doubled-brace mismatches
+- models 14 and 16 now differ only by the same blank-line-before-footer formatting issue seen elsewhere
+- all 19 task-mgr files still differ textually, but only by non-semantic whitespace
