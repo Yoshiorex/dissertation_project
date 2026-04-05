@@ -1,6 +1,15 @@
 \chapter{Introduction}
 \label{chap:Introduction}
 
+% REVISION NOTE (target +0.5 to 0.75 page): do not pad the opening summary.
+% Add only two short pieces of genuinely useful material in this chapter:
+% 1) make it explicit that the bridge-based migration strategy was your own design
+%    contribution;
+% 2) briefly note that the Haskell side of the work was self-taught, which helps
+%    frame the scope and effort honestly.
+
+% SUPERVISOR NOTE (p8): "Nice summary" -> keep this opening tight rather than
+% stretching it for length.
 This chapter introduces the dissertation, motivates the decision to port part of the RTEMS test-generation pipeline from Python to Haskell, and explains the structure of the document. It first describes the technical context of the project, then states the aim and scope of the work, and finally shows how the remaining chapters support the overall argument.
 
 \section{Motivation}
@@ -16,6 +25,10 @@ The main aim of the dissertation is to determine whether the \texttt{refine\_com
 The scope of the work is deliberately narrow. The dissertation does not attempt to redesign the full \texttt{testbuilder} workflow, replace RTEMS itself, or prove that Haskell is universally better than Python for test generation. Instead, it focuses on one difficult, stateful part of the toolchain and studies how a gradual port can be carried out without losing confidence in the output.
 
 The main contributions of the dissertation are:
+% SUPERVISOR NOTE (p9): make it explicit here that the bridge approach was your
+% idea, not just an implementation convenience inherited from elsewhere.
+% LENGTH TARGET (+0.25 to 0.5 page): add 1 short paragraph before or after this
+% list explaining why the bridge strategy is a contribution in its own right.
 \begin{itemize}
   \item a bridge-based strategy for introducing a Haskell refiner without discarding the existing Python pipeline;
   \item an explicit-state Haskell implementation of the refinement stage;
@@ -23,5 +36,8 @@ The main contributions of the dissertation are:
 \end{itemize}
 
 \section{Dissertation Structure}
+
+% SUPERVISOR NOTE (p9): "Looks good..." -> leave this section concise; do not add
+% length here unless a later chapter is restructured enough to require a new map.
 
 Chapter~\ref{chap:StateOfTheArt} reviews the background needed for the project, including model-checker-based test generation, functional programming, and multilingual system design. Chapter~\ref{chap:Design} defines the problem more precisely and explains the design decisions behind the bridge-based port. Chapter~\ref{chap:Implementation} describes how the refiner was moved from Python to Haskell and where the implementation changed from line-by-line translation to a more Haskell-native design. Chapter~\ref{chap:Evaluation} evaluates the result by comparing generated outputs and discussing the remaining limitations of the workflow. Chapter~\ref{chap:Conclusions} closes the dissertation and identifies the most useful directions for further work.

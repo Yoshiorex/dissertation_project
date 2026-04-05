@@ -3,9 +3,18 @@
 \lstset{language=Python}
 \captionsetup{width=.8\linewidth}
 
+% REVISION NOTE (target +5 to 6 pages): most of the honest extra length belongs in
+% this chapter. Reduce repeated WHY and replace it with HOW: Python-side changes,
+% bridge lifecycle, state transitions, concrete translation examples, and shorter,
+% better-focused listings.
+
 This chapter describes how the design of the previous chapter was realised in the repository. It explains the staged transition from the original Python refiner to the Haskell version, the supporting bridge and diff-based workflow used to keep the port testable, and the point at which the implementation stopped being a direct translation and became a more Haskell-native rewrite.
 
 \section{Overview of the Solution}
+
+% SUPERVISOR NOTE (p17): this opening is starting to repeat the WHAT and WHY.
+% Trim repetition here and spend the recovered space lower down on mechanics,
+% examples, and concrete code-path explanation.
 
 The implementation followed a gradual transition from the original Python refiner to a Haskell refiner while keeping the rest of the pipeline recognisable. The main files involved were \texttt{refine\_command.py}, \texttt{spin2test.py}, \texttt{combined\_haskell\_bridge.py}, and the new \texttt{refine\_command.hs}. The objective was not to replace everything at once, but to replace the refinement stage in a way that could be checked end to end against the old behaviour.
 
@@ -17,11 +26,21 @@ The testing and debugging effort was directed toward functional equivalence with
 
 \subsection{The Bridge}
 
+% SUPERVISOR NOTE (p18): add 1.5 to 2 pages here on HOW the bridge works in practice.
+% Show the Python entry point, the message format, process startup/shutdown,
+% error handling, and one short logged exchange from INIT through testBody.
+% Also explain what changed on the Python side to preserve the historical command
+% interface while delegating the core refinement work to Haskell.
+
 During the transition, a bridge layer preserved the historical Python-facing \texttt{command} interface while moving the refinement work behind a subprocess boundary. Python remained responsible for orchestrating the wider pipeline, but Haskell could now be exercised inside that pipeline without forcing an immediate rewrite of every caller.
 
 Communication was carried entirely through standard input and output. The bridge sends configuration data to the Haskell process, forwards annotation lines one at a time, and finally requests the rendered test body. This arrangement is deliberately plain, but it has two practical benefits: the interface is explicit, and the same messages can be logged or replayed when something goes wrong.
 
 \subsection{The Diff Script}
+
+% SUPERVISOR NOTE (p19): keep listings short and stop them breaking across pages.
+% If necessary, replace full-file listings with excerpted fragments that only show
+% the mismatch being discussed, and move secondary detail into prose.
 
 A constant part of the porting process was checking the generated test files against the ones produced by the original system. At first this was done manually with an online text comparison tool, but that approach became unworkable once a single change could affect many generated files. A small local diff script therefore became part of the working process.
 
@@ -32,6 +51,11 @@ The diff-based approach was intentionally strict. It reported trivial whitespace
 Unit tests were also added around the Haskell refiner, but they were less decisive than the end-to-end diff checks. Unit tests were useful for protocol handling, configuration loading, and small local behaviours. They were less effective for the interactions that actually mattered most, where several pieces of state and several refinement templates combined to produce one incorrect line of generated code.
 
 \subsection{Refine Command}
+
+% SUPERVISOR NOTE (p21): add 2.5 to 3 pages here with a running example. Start from
+% one concrete annotation line or short sequence, show the relevant Python template or
+% dictionary entry, show the Haskell state transition(s), and end with the emitted C.
+% This is the cleanest way to add useful length without padding.
 
 This was the main file to be converted. Its job is to take annotated SPIN output and refine it into concrete test code by matching annotation lines against entries in a model-specific refinement dictionary. Those entries are small templates of C code with placeholders for names, values, and identifiers taken from the trace.
 
@@ -79,6 +103,8 @@ data RuntimeState = RuntimeState
 The same information is still present, but it is now grouped into one explicit record. Rather than hidden mutation on an object, each function takes a state and returns the next one.
 
 \paragraph{One SPIN line producing the next state}
+% SUPERVISOR NOTE (p21): "Fix these!" Review the line wrapping and caption flow around
+% Listings 4.4 and 4.5. If they still crowd the page, split them or shorten them.
 \begin{lstlisting}[language=Haskell, caption={Processing one SPIN line by returning a new state}, label={lst:haskell-state-pipeline}]
 refineSPINLineMain :: [Text] -> RuntimeState -> RuntimeState
 refineSPINLineMain ln rt0 =
@@ -100,6 +126,10 @@ _pidTxt:"SCALAR":"_":value:[] ->
 \end{lstlisting}
 
 Sequence handling was where this change felt most useful. In this context a sequence is an ordered run of values collected between \texttt{SEQ} and \texttt{END} and later emitted through a matching \texttt{\_SEQ} template. In the Haskell version, entering that mode and accumulating those values are both visible directly in the returned state.
+
+% LENGTH TARGET (+1 to 1.5 pages): after the state snippets, add one end-to-end
+% translation walkthrough with intermediate runtime-state snapshots. That will satisfy
+% the request for more Haskell detail better than adding more isolated code fragments.
 
 \section{Summary}
 

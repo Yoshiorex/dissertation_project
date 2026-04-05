@@ -121,6 +121,64 @@
 \usepackage{float}
 \hypersetup{hidelinks}
 
+% ============================================================================
+% REVISION PLAN FOR NEXT DRAFT
+% Overall target:
+% - Add roughly 12-15 pages of technical substance, aiming for about 40-45 total
+%   pages including front matter and references. That is enough to address the
+%   current thin spots without forcing the dissertation all the way to 60 pages.
+% - Put almost all new length into Design, Implementation, and Evaluation.
+%   Avoid padding the Introduction or chapter map.
+%
+% Chapter targets:
+% - Introduction: +0.5 to 0.75 page. Make the bridge strategy explicit as your
+%   own contribution and briefly note that the Haskell work was self-taught.
+% - State of the Art: +2 to 2.5 pages. Add more model-checking-to-test-generation
+%   references, especially OS/embedded/system-level work, and connect the
+%   multilingual boundary discussion more directly to later design choices.
+% - Design: +2 to 2.5 pages. Add an end-to-end running example and explain why
+%   the subprocess bridge was chosen over deeper integration options.
+% - Implementation: +5 to 6 pages. This is the main place to grow: show Python-
+%   side changes, bridge message flow, one full translation example, more Haskell
+%   code, and shorter better-contained listings.
+% - Evaluation: +2 to 2.5 pages. Spell out the experiment procedure, saved trace
+%   replay, diff classification, and limits of text-based comparison.
+% - Conclusions/Future Work: +1 to 1.5 pages. Rewrite the parity sentence cleanly
+%   and explain what pushing the bridge outward by porting spin2test would entail.
+%
+% Supervisor PDF annotations mapped to actions:
+% - p8 "Nice summary" -> keep the Introduction opening concise; do not add bulk here.
+% - p9 "bridge approach was your idea" -> add 0.25-0.5 page making that design
+%   contribution explicit in Introduction and Design.
+% - p9 "Looks good..." -> Dissertation Structure section is fine; no extra length needed.
+% - p11 "Any other interesting papers..." -> add 2-3 more closely related references in
+%   State of the Art.
+% - p11 "Nice" -> Functional-programming framing is working; keep it concise.
+% - p12 "You should elaborate..." -> cash out the interface-boundary claims later with
+%   concrete bridge/design/implementation detail.
+% - p12 "Nice" -> integration-options paragraph is worth keeping as context.
+% - p13 "point out that you taught yourself Haskell..." -> add a brief note on this in
+%   Introduction or Implementation to frame scope and learning curve honestly.
+% - p16 "Good." -> keep the protocol sketch, but surround it with a fuller walkthrough.
+% - p17 "focus on the nitty-gritty of HOW" -> trim repeated motivation in Implementation
+%   and replace it with mechanics and examples.
+% - p18 "say a lot more about HOW the bridge is implemented" -> add message format,
+%   Python changes, process lifecycle, and an example exchange.
+% - p19 "ensure listings don't get broken..." -> shorten listings, split long ones,
+%   and keep only the lines needed for the argument.
+% - p21 "Fix these!" -> clean listing flow and wrapping around the state-transition examples.
+% - p21 "You need more details here..." -> add a running example from annotation line
+%   to generated C, with more Haskell code and at least one translation walkthrough.
+% - p24 "Nice example" -> keep the brace-escaping bug as the anchor case study and
+%   expand the explanation around it slightly.
+% - p25 highlight with no text -> likely rewrite the behavioural-preservation sentence
+%   in Conclusions so the claim is stated cleanly.
+% - p26 "replace the Python code... by Haskell" -> expand Future Work with the concrete
+%   work needed to port spin2test and move the language boundary outward.
+% - p27 "references to MC-based testgen for operating systems" -> add these references
+%   in State of the Art rather than only in the bibliography.
+% ============================================================================
+
 %%------------------------------------------------
 %% Listing macros
 %%------------------------------------------------

@@ -1,9 +1,17 @@
 \chapter{Evaluation}
 \label{chap:Evaluation}
 
+% REVISION NOTE (target +2 to 2.5 pages): this chapter can grow without padding by
+% spelling out the experimental method and the meaning of the remaining differences.
+
 This chapter evaluates the finished port against the main aim of the dissertation. It first explains how output comparison was carried out across the seven active repository models, then reports the differences that were found, including the one substantive task manager mismatch and its fix, and finally discusses what the experiment says about behavioural preservation and workflow compatibility.
 
 \section{Experiments}
+
+% LENGTH TARGET (+1.5 to 2 pages): expand this section with the exact comparison
+% procedure: which models were run, how many trails/files per model, how outputs were
+% captured, how saved traces were replayed, how diffs were classified, and what counts
+% as semantic versus non-semantic. This is the easiest honest place to add substance.
 
 The evaluation was based on differential comparison between the original Python refiner and the Haskell refiner. For each of the seven active models in the repository, test code was generated once with the Python version and once with the Haskell version. The resulting files were then compared with a diff-based workflow, and each difference was classified as either semantic, where the generated C code changed meaning, or non-semantic, where only formatting changed.
 
@@ -53,6 +61,10 @@ formatTemplate template args =
 			formatted = L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
 	 in T.replace "}}" "}" (T.replace "{{" "{" formatted)
 \end{lstlisting}
+
+% SUPERVISOR NOTE (p24): "Nice example" -> keep this as the anchor defect case.
+% Add about 0.5 page explaining why it was representative, how the diff narrowed the
+% search, and why the remaining mismatches were judged harmless.
 
 After rebuilding the Haskell refiner and replaying the saved \texttt{task-mgr} \texttt{.spn} files, the doubled-brace mismatch disappeared. Models 14 and 16 then reduced to the same blank-line-only difference seen elsewhere. This is an important result for the dissertation because it shows that the diff workflow did not merely report mismatches; it also isolated one concrete defect and guided it to a specific fix.
 

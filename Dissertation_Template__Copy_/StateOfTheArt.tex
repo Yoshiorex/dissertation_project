@@ -1,6 +1,11 @@
 \chapter{State of the Art}
 \label{chap:StateOfTheArt}
 
+% REVISION NOTE (target +2 to 2.5 pages): grow this chapter with closer technical
+% context, not generic background. The strongest additions are more MC-based test
+% generation literature, especially OS/embedded/system-level work, and a clearer
+% bridge from the multilingual-systems literature into later design decisions.
+
 This chapter positions the dissertation within the background work that made the project possible. It first reviews model-checker-based test generation and the RTEMS-specific context, then discusses the functional programming ideas that motivate the use of Haskell, and finally considers the practical problems of combining Python and Haskell inside one toolchain.
 
 \section{Model Checking and Test Generation}
@@ -11,7 +16,15 @@ That distinction matters because the dissertation does not replace the modelling
 
 A broader example of the same general idea appears in the work of Zheng et al. \citep{zheng2007model}. They use model checking to derive tests for service behaviour described in BPEL-style models. The domain is different from RTEMS, and the modelling formalism is different from the Promela workflow used here, but the wider pattern is similar: model checking is used to systematically derive execution scenarios, and a second stage turns those scenarios into executable tests. That makes this dissertation easier to place in a broader test-generation tradition rather than treating it as an isolated RTEMS-specific toolchain.
 
+% SUPERVISOR NOTE (p11/p27): add 0.75 to 1 page here on additional model-checking-
+% based test generation papers, ideally including at least one operating-system or
+% systems-software example. Use that comparison to sharpen what is specific about
+% the RTEMS/SPIN pipeline.
+
 \section{Functional Programming and Haskell}
+
+% SUPERVISOR NOTE (p11): "Nice" -> this section already does its job. Keep any
+% additions modest and focused on the parts that later cash out in the implementation.
 
 A useful starting point for the Haskell side of the project is Hughes's argument that modularity is one of the strongest practical benefits of functional programming \citep{hughes1989why}. That is directly relevant here because the refiner is a transformation stage: it reads one representation of behaviour and incrementally builds another. A style that makes intermediate state and data flow explicit is therefore attractive, especially when behaviour must be preserved while the internal structure changes.
 
@@ -29,7 +42,15 @@ The project is also part of a broader class of multilingual systems, where one l
 
 This problem shaped the eventual architecture. Instead of a deep foreign-function interface, the project used a narrow subprocess protocol over standard input and output. That choice keeps the boundary explicit. Configuration is passed in as JSON, annotation lines are refined one at a time, and the rendered test body is returned at the end. The approach is less elegant than a direct import, but it is easier to inspect, easier to debug, and better aligned with the existing Python pipeline. It also reflects the main lesson of the multilingual-systems literature in a fairly direct way: once the boundary is explicit, it becomes easier to reason about what data crosses it and where failures should be diagnosed.
 
+% SUPERVISOR NOTE (p12): "You should elaborate on some of those later" -> do that in
+% Chapters 3 and 4. Here, add only a short signpost sentence naming the concrete
+% trade-offs (build simplicity, inspectability, debuggability, API stability), then
+% unpack them with examples later.
+
 Two concrete integration options were considered during the project. The HaPy library \citep{fisher2014hapy} suggested a more direct Python-to-Haskell interface by exposing compiled Haskell code to Python, but its documented setup depends on shared-library builds and a limited set of supported exported types. The call-haskell-from-anything library \citep{hambuechen2011callhaskell} explored a more general MessagePack-based boundary over the C foreign-function interface. Both were useful as engineering reference points, but neither was adopted. The repository needed a controlled way to preserve the existing Python API while changing the implementation behind it, and the simpler subprocess boundary turned out to be the safer fit for that requirement.
+
+% SUPERVISOR NOTE (p12): "Nice" -> keep this paragraph; it gives the later design
+% chapter something concrete to compare against.
 
 \section{Closely Related Work}
 
@@ -60,3 +81,7 @@ Ja{\'s}ku{\'c} \citep{jaskuc2022barrier} & Demonstrates the value of the RTEMS/S
 \end{table}
 
 In summary, the literature and engineering context suggest two main conclusions. First, the project is well motivated as a study of how model-checker output can be preserved while the refinement stage is restructured. Second, the challenge is not only one of programming language choice, but also one of managing a clear interface between old and new implementations.
+
+% SUPERVISOR NOTE (p13): add 2-3 sentences either here or in Chapter 1/4 stating
+% that the Haskell work was self-taught rather than coming from formal Haskell modules.
+% Keep it brief and use it to frame the scope, not as autobiography.

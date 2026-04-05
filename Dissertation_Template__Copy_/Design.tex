@@ -1,6 +1,10 @@
 \chapter{Design}
 \label{chap:Design}
 
+% REVISION NOTE (target +2 to 2.5 pages): this chapter should cash out the bridge
+% idea with one concrete end-to-end example and a clearer argument for why the
+% language boundary sits where it does.
+
 This chapter turns the background of the previous chapter into concrete design decisions. It defines the specific problem within the existing RTEMS toolchain, identifies the constraints that any replacement must satisfy, and explains the bridge-based design used to introduce Haskell gradually rather than by one large swap.
 
 \section{Problem Formulation}
@@ -26,8 +30,16 @@ The design adopted in this dissertation is a staged port of \texttt{refine\_comm
 
 The central design decision is therefore not only to use Haskell, but to introduce it behind a bridge that preserves the historical Python-facing interface. That keeps the migration incremental. The new implementation can be checked with the same inputs as the old one, and output differences can be detected before they spread into the rest of the workflow.
 
+% SUPERVISOR NOTE (p9): this is a second good place to underline that the bridge
+% strategy was your design choice. Add ~0.5 page comparing it with the two obvious
+% alternatives: full rewrite first, or tighter FFI-style integration.
+
 \section{Overview of the Design}
 \label{sec:OverviewOfDesign}
+
+% LENGTH TARGET (+1 to 1.25 pages): add a running example that starts with one
+% concrete annotation line and follows it through the bridge to the emitted C fragment.
+% That gives the reader a mental model before Chapter 4 gets into implementation detail.
 
 The overall design separates the system into three logical parts: SPIN produces annotated traces from Promela models, the bridge passes those annotations and configuration data to the Haskell refiner, and the existing Python-side tooling assembles the final test files around the rendered body. This decomposition isolates the port to the refinement stage while leaving the rest of the pipeline stable.
 
@@ -40,7 +52,15 @@ COMMAND:refineSPINLine:["4", "CALL", "WaitForSuspend", "2", "resumeRC"]
 COMMAND:testBody
 \end{lstlisting}
 
+% SUPERVISOR NOTE (p16): "Good." Keep this protocol sketch, but add a fuller
+% walkthrough around it: who sends each message, what state exists before/after it,
+% and why JSON plus line commands were sufficient for this project.
+
 This design also made differential checking a first-class part of the project rather than an afterthought. Because the Haskell refiner could be exercised with the same traces as the Python original, text diffs on generated tests became the main feedback loop. That in turn made it possible to move from a line-by-line translation strategy to a more Haskell-native design without losing confidence in the observable output.
+
+% LENGTH TARGET (+0.75 to 1 page): compare the adopted subprocess bridge with the
+% deeper alternatives mentioned in Chapter 2 using explicit criteria: build friction,
+% debuggability, preservation of the Python API, and ease of regression checking.
 
 \section{Summary}
 \label{sec:SummaryDesign}

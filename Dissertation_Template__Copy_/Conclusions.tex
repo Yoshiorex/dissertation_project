@@ -1,6 +1,9 @@
 \chapter{Conclusions \& Future Work}
 \label{chap:Conclusions}
 
+% REVISION NOTE (target +1 to 1.5 pages): keep this chapter sharp, but use a bit more
+% space to state the final claim precisely and to explain the next logical porting step.
+
 This final chapter draws together the outcome of the dissertation and outlines the most useful directions for later work. It first restates what the project achieved, then reflects on the main limitation that remained after evaluation, and finally identifies the next technical steps that would make the port more complete.
 
 
@@ -10,6 +13,9 @@ This dissertation set out to examine whether the most difficult part of the test
 
 The main contribution of the project is therefore not just a second implementation of \texttt{refine\_command}, but a practical method for replacing part of an existing formal methods toolchain in a controlled way. The project also showed that the port only became worthwhile once it stopped imitating the Python structure line by line and started using more natural Haskell techniques, particularly explicit state handling and clearer decomposition of the refinement logic.
 
+% SUPERVISOR HIGHLIGHT (p25): rewrite the next sentence cleanly. The likely intended
+% claim is that behaviour is preserved even though byte-for-byte textual identity was
+% not reached.
 The evaluation strengthened the behavioural claim further by exposing one substantive \texttt{task-mgr} formatting bug, tracing it to template brace escaping, and fixing it. After that repair the remaining differences across the seven models were limited to whitespace. This means that the has strpmg output preservation, but not byte-for-byte textual parity.
 
 
@@ -17,9 +23,17 @@ The evaluation strengthened the behavioural claim further by exposing one substa
 
 \section{Future Work}
 
+% SUPERVISOR NOTE (p26): add 0.5 to 1 page here on what it would take to push the
+% bridge outward by porting spin2test: file discovery, YAML/template loading, CLI
+% parity, error reporting, and how regression checking would change.
+
 While not as crucial as the porting of the refine command itself, it was originally planned to port \texttt{spin2test} to Haskell as well. This would simplify the communication between \texttt{spin2test} and \texttt{refine\_command} by removing the current dependence on standard input and output messages passed through the bridge. At present the bridge file and the refiner exchange commands and results continuously. In contrast, \texttt{testbuilder} launches \texttt{spin2test} once and then lets it read the necessary \texttt{.spn}, YAML, and template files itself. Moving this part of the system as well would reduce the amount of fragile cross-language coordination and likely make the whole pipeline easier to maintain.
 
 Another useful piece of future work would be a more direct evaluation of maintainability. The clearest version of this would be to add a new annotation type or a new output target in both systems and compare the amount and complexity of the changes required. That was beyond the scope of this dissertation, but it would test the maintainability claim more directly.
+
+% LENGTH TARGET (+0.25 to 0.5 page): briefly distinguish future work on removing the
+% language boundary from future work on measuring maintainability. That will make the
+% closing plan feel more deliberate and less like a single loose list.
 
 
 
