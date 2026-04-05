@@ -7,7 +7,7 @@ This chapter describes how the design of the previous chapter was realised in th
 
 \section{Overview of the Solution}
 
-The implementation followed a gradual transition from the original Python refiner to a Haskell refiner while keeping the rest of the pipeline recognisable. The main files involved were \texttt{pure\_python\_refine\_command.py}, \texttt{spin2test.py}, \texttt{combined\_haskell\_bridge.py}, and the new \texttt{refine\_command.hs}. The objective was not to replace everything at once, but to replace the refinement stage in a way that could be checked end to end against the old behaviour.
+The implementation followed a gradual transition from the original Python refiner to a Haskell refiner while keeping the rest of the pipeline recognisable. The main files involved were \texttt{refine\_command.py}, \texttt{spin2test.py}, \texttt{combined\_haskell\_bridge.py}, and the new \texttt{refine\_command.hs}. The objective was not to replace everything at once, but to replace the refinement stage in a way that could be checked end to end against the old behaviour.
 
 A full rewrite from the start would have been risky. The refiner is small enough to look manageable, but it contains many state-dependent branches and many points where template expansion affects the final test file. Reaching the end of a full rewrite before comparing outputs would therefore have made it difficult to localise errors. The staged approach reduced that risk by keeping differential comparison in the loop throughout the port.
 

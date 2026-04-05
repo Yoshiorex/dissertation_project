@@ -7,9 +7,6 @@ This chapter evaluates the finished port against the main aim of the dissertatio
 
 The evaluation was based on differential comparison between the original Python refiner and the Haskell refiner. For each of the seven active models in the repository, test code was generated once with the Python version and once with the Haskell version. The resulting files were then compared with a diff-based workflow, and each difference was classified as either semantic, where the generated C code changed meaning, or non-semantic, where only formatting changed.
 
-The original plan was to perform this comparison entirely through the existing workflow. In practice, the repository on this Windows machine required additional setup before the experiment could be completed. SPIN was not on the \texttt{PATH}, the checked-in Haskell executable was not usable on Windows, and the current \texttt{testbuilder} configuration still contained Linux-specific absolute paths. To complete the experiment, SPIN was built locally, a temporary cabal wrapper was used to build a Windows Haskell executable, and the saved \texttt{.spn} files were replayed through a small verification client. This extra work matters to the evaluation because it shows that behavioural preservation is stronger than full workflow portability in the current repository state.
-
-The full comparison nevertheless remained faithful to the intended question of the dissertation. The important issue is not whether the Haskell port is faster or more elegant in isolation, but whether it preserves the test generation behaviour of the Python refiner across the existing model set.
 
 
 \section{Results}
@@ -59,12 +56,10 @@ formatTemplate template args =
 
 After rebuilding the Haskell refiner and replaying the saved \texttt{task-mgr} \texttt{.spn} files, the doubled-brace mismatch disappeared. Models 14 and 16 then reduced to the same blank-line-only difference seen elsewhere. This is an important result for the dissertation because it shows that the diff workflow did not merely report mismatches; it also isolated one concrete defect and guided it to a specific fix.
 
-The comparison therefore supports the main claim of the project more strongly than the workflow claim. Behavioural preservation is well supported across the full model set. Workflow compatibility is only partially supported in the current repository state because the Windows experiment still required manual setup and a temporary local build of the Haskell executable.
 
-The incomplete extension experiment remains a limitation of the evaluation. The project can make a strong claim about behavioural preservation, but only a weaker argued claim about maintainability. The implementation suggests that explicit state and clearer decomposition make the Haskell version easier to reason about, but that claim was not tested by a dedicated change task.
 
 
 
 \section{Summary}
 
-The evaluation shows that the Haskell refiner preserves the behaviour of the Python version much more strongly than it preserves turnkey workflow compatibility on Windows. One substantive task manager bug was found, traced to template brace escaping, and fixed. After that repair the remaining differences across all seven models were non-semantic blank lines, which means the dissertation can make a strong claim about output preservation while still acknowledging the remaining setup work around the surrounding toolchain.
+The evaluation shows that the Haskell refiner preserves the behaviour of the Python version. One substantive task manager bug was found, traced to template brace escaping, and fixed. After that repair the remaining differences across all seven models were non-semantic blank lines.

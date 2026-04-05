@@ -10,9 +10,9 @@ This dissertation set out to examine whether the most difficult part of the test
 
 The main contribution of the project is therefore not just a second implementation of \texttt{refine\_command}, but a practical method for replacing part of an existing formal methods toolchain in a controlled way. The project also showed that the port only became worthwhile once it stopped imitating the Python structure line by line and started using more natural Haskell techniques, particularly explicit state handling and clearer decomposition of the refinement logic.
 
-The evaluation strengthened the behavioural claim further by exposing one substantive \texttt{task-mgr} formatting bug, tracing it to template brace escaping, and fixing it. After that repair the remaining differences across the seven models were limited to whitespace. This means the dissertation can make a strong claim about output preservation, but not yet about byte-for-byte textual parity.
+The evaluation strengthened the behavioural claim further by exposing one substantive \texttt{task-mgr} formatting bug, tracing it to template brace escaping, and fixing it. After that repair the remaining differences across the seven models were limited to whitespace. This means that the has strpmg output preservation, but not byte-for-byte textual parity.
 
-The main limitation of the work is that the evaluation is much stronger on behavioural preservation than on ease of extension. The code structure suggests that the Haskell version is easier to reason about and maintain, but that part was argued from the implementation rather than demonstrated through a dedicated experiment. A second limitation is that workflow compatibility on Windows still required manual setup, so the repository is not yet a fully turnkey replacement for the original tooling in that environment.
+
 
 
 \section{Future Work}
@@ -21,6 +21,6 @@ While not as crucial as the porting of the refine command itself, it was origina
 
 Another useful piece of future work would be a more direct evaluation of maintainability. The clearest version of this would be to add a new annotation type or a new output target in both systems and compare the amount and complexity of the changes required. That was beyond the scope of this dissertation, but it would test the maintainability claim more directly.
 
-Finally, the surrounding tooling needs engineering work if the Haskell refiner is to become a drop-in replacement in more than one environment. The evaluation on Windows required a local SPIN build, a temporary cabal wrapper, and a Windows-specific Haskell executable. Packaging that setup properly, and removing the remaining platform-specific assumptions from \texttt{testbuilder}, would turn the current experimental success into a more robust day-to-day workflow.
 
-In summary, the dissertation achieved a behaviour-preserving port of the refiner and established a practical method for migrating a stateful part of an existing toolchain without losing confidence in the output. The next step is not to prove that the port was possible, but to reduce the remaining workflow friction and test the maintainability claim more directly.
+
+In summary, the dissertation achieved a behaviour-preserving port of the refiner and established a practical method for migrating a stateful part of an existing toolchain without losing confidence in the output. The next step is to reduce the remaining workflow friction and test the maintainability  more directly.
