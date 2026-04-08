@@ -5,30 +5,98 @@
 % idea with one concrete end-to-end example and a clearer argument for why the
 % language boundary sits where it does.
 
-This chapter turns the background of the previous chapter into concrete design decisions. It defines the specific problem within the existing RTEMS toolchain, identifies the constraints that any replacement must satisfy, and explains the bridge-based design used to introduce Haskell gradually rather than by one large swap.
+This chapter turns the background of the previous chapter into
+concrete design decisions. It defines the specific problem within the
+existing RTEMS toolchain, identifies the constraints that any
+replacement must satisfy, and explains the bridge-based design used to
+introduce Haskell gradually rather than by one large swap.
 
 \section{Problem Formulation}
 \label{sec:ProblemFormulation}
 
-The problem addressed by this dissertation is not that the existing generator failed to produce useful RTEMS tests. The problem is that one central stage of the pipeline, the Python refiner, became difficult to restructure safely as the project grew. The \texttt{testbuilder} workflow already had working Promela models, a working SPIN-based exploration stage, and working C test generation. Changing the refiner therefore meant changing the part of the system where the risk of regression was highest.
+The problem addressed by this dissertation is not that the existing
+generator failed to produce useful RTEMS tests. The problem is that
+one central stage of the pipeline, the Python refiner, became
+difficult to restructure safely as the project grew. The
+\texttt{testbuilder} workflow already had working Promela models, a
+working SPIN-based exploration stage, and working C test generation.
+Changing the refiner therefore meant changing the part of the system
+where the risk of regression was highest.
 
-The existing Python refiner combines several kinds of work in one place. It parses annotation lines, tracks context such as whether refinement is currently inside a \texttt{STRUCT} or \texttt{SEQ}, performs lookups in a refinement dictionary, and accumulates generated code fragments. This arrangement works, but it makes it harder to reason locally about how one line of input affects the next state of the translation.
+The existing Python refiner combines several kinds of work in one
+place. It parses annotation lines, tracks context such as whether
+refinement is currently inside a \texttt{STRUCT} or \texttt{SEQ},
+performs lookups in a refinement dictionary, and accumulates generated
+code fragments. This arrangement works, but it makes it harder to
+reason locally about how one line of input affects the next state of
+the translation.
 
-Three properties of the original implementation were especially important. First, context is stored as mutable object state. Second, the main refinement function handles many annotation forms in one place. Third, template expansion and code accumulation are interleaved with control flow. Each of these is manageable in isolation, but together they make structural changes riskier than they need to be.
+Three properties of the original implementation were especially
+important. First, context is stored as mutable object state. Second,
+the main refinement function handles many annotation forms in one
+place. Third, template expansion and code accumulation are interleaved
+with control flow. Each of these is manageable in isolation, but
+together they make structural changes riskier than they need to be.
 
 \subsection{Identified Challenges}
 
-The first challenge was behavioural preservation. The repository already contained working models and a working Python refiner. A replacement could only be justified if it produced the same observable output for the existing model set.
+The first challenge was behavioural preservation. The repository
+already contained working models and a working Python refiner. A
+replacement could only be justified if it produced the same observable
+output for the existing model set.
 
-The second challenge was integration. The refiner is not a standalone tool. It is called from the existing Python pipeline and depends on YAML refinement dictionaries, language templates, and per-model header fragments. Any design therefore had to fit around those existing inputs rather than invent a new workflow.
+The second challenge was integration. The refiner is not a standalone
+tool. It is called from the existing Python pipeline and depends on
+YAML refinement dictionaries, language templates, and per-model header
+fragments. Any design therefore had to fit around those existing
+inputs rather than invent a new workflow.
 
-The third challenge was scope control. Replacing the entire pipeline at once would have made it difficult to distinguish language-porting issues from unrelated tooling issues. A narrower design was needed so that the hardest stateful component could be rewritten first and checked continuously against the original behaviour.
+The third challenge was scope control. Replacing the entire pipeline
+at once would have made it difficult to distinguish language-porting
+issues from unrelated tooling issues. A narrower design was needed so
+that the hardest stateful component could be rewritten first and
+checked continuously against the original behaviour.
 
 \subsection{Proposed Work}
 
-The design adopted in this dissertation is a staged port of \texttt{refine\_command}. The Haskell implementation keeps the same external role as the Python one: it receives tokenised annotation lines, updates its refinement state, and eventually renders a test body. The surrounding Python code is retained so that existing configuration files, model assets, and generation scripts can continue to drive the process.
+The design adopted in this dissertation is a staged port of
+\texttt{refine\_command}. The Haskell implementation keeps the same
+external role as the Python one: it receives tokenised annotation
+lines, updates its refinement state, and eventually renders a test
+body. The surrounding Python code is retained so that existing
+configuration files, model assets, and generation scripts can continue
+to drive the process.
 
-The central design decision is therefore not only to use Haskell, but to introduce it behind a bridge that preserves the historical Python-facing interface. That keeps the migration incremental. The new implementation can be checked with the same inputs as the old one, and output differences can be detected before they spread into the rest of the workflow.
+The central design decision is therefore not only to use Haskell, but
+to introduce it behind a bridge that preserves the historical
+Python-facing interface. That keeps the migration incremental. The new
+implementation can be checked with the same inputs as the old one, and
+output differences can be detected before they spread into the rest of
+the workflow.
+
+The language boundary was placed there on purpose. When
+\texttt{spin2test.py} hands work to the refiner, most of the
+surrounding setup has already been done: the correct model files have
+been found, the \texttt{.spn} output has been reduced to annotation
+lines, and the right YAML refinement dictionary has been loaded. That
+leaves the refiner with a much narrower job. It only has to receive
+its initial configuration, process annotation lines one by one, and
+return the finished test body. Putting the boundary at this point
+therefore isolates the most stateful part of the workflow without also
+forcing the project to port file handling, YAML loading, and final
+test-file assembly at the same time.
+
+Two more aggressive alternatives were considered and rejected. A full
+rewrite first would have moved the language boundary outward
+immediately, but it would also have coupled refiner changes with
+changes to \texttt{spin2test.py}, file orchestration, and template
+loading. That would have made regressions harder to localise. A
+tighter FFI-style integration would have kept the design inside one
+process, but at the cost of shared-library build friction, a more
+brittle compiled boundary, and a less transparent debugging story. The
+subprocess bridge was therefore chosen because it preserved the
+historical Python API, kept the build simpler, and made every
+cross-language message inspectable.
 
 % SUPERVISOR NOTE (p9): this is a second good place to underline that the bridge
 % strategy was your design choice. Add ~0.5 page comparing it with the two obvious
@@ -41,22 +109,104 @@ The central design decision is therefore not only to use Haskell, but to introdu
 % concrete annotation line and follows it through the bridge to the emitted C fragment.
 % That gives the reader a mental model before Chapter 4 gets into implementation detail.
 
-The overall design separates the system into three logical parts: SPIN produces annotated traces from Promela models, the bridge passes those annotations and configuration data to the Haskell refiner, and the existing Python-side tooling assembles the final test files around the rendered body. This decomposition isolates the port to the refinement stage while leaving the rest of the pipeline stable.
+The overall design separates the system into three logical parts:
+SPIN produces annotated traces from Promela models, the bridge passes
+those annotations and configuration data to the Haskell refiner, and
+the existing Python-side tooling assembles the final test files around
+the rendered body. This decomposition isolates the port to the
+refinement stage while leaving the rest of the pipeline stable.
 
-A line-oriented protocol was used between Python and Haskell because it made the interface explicit and easy to inspect. The bridge sends an initial JSON configuration, then a sequence of refinement commands, and finally requests the rendered test body. The protocol is simple enough to log and replay, which proved useful during debugging.
+In the current repository the direction of control remains Python-led.
+\texttt{spin2test.py} reads the generated trace file, keeps only lines
+prefixed with \texttt{@@@}, splits those lines into tokens, loads the
+refinement dictionary from YAML, and constructs the historical
+\texttt{command} object. That object name is preserved so the caller
+interface does not change, but the implementation behind it is now the
+bridge in \texttt{combined\_haskell\_bridge.py}. The bridge starts the
+Haskell executable in interactive mode and mirrors the methods that
+the existing Python pipeline already expects, including
+\texttt{setupLanguage}, \texttt{refineSPINLine\_main}, and
+\texttt{test\_body}.
 
-\begin{lstlisting}[caption={Simplified bridge protocol between Python and Haskell}, label={lst:bridge-protocol}]
+A line-oriented protocol was used between Python and Haskell because
+it made the interface explicit and easy to inspect. The bridge sends
+an initial JSON configuration, then a sequence of refinement commands,
+and finally requests the rendered test body. The protocol is simple
+enough to log and replay, which proved useful during debugging.
+
+\begin{lstlisting}[caption={Simplified bridge exchange between Python and Haskell}, label={lst:bridge-protocol}]
 INIT JSON:{...}
+RESPONSE:SUCCESS:INIT JSON received
 COMMAND:setupLanguage
+RESPONSE:SUCCESS:setupLanguage
 COMMAND:refineSPINLine:["4", "CALL", "WaitForSuspend", "2", "resumeRC"]
+RESPONSE:SUCCESS:refineSPINLine
 COMMAND:testBody
+RESPONSE:SUCCESS:testBody:BEGIN
+...
+RESPONSE:SUCCESS:testBody:END
 \end{lstlisting}
+
+A concrete example helps to show why this boundary works. In the
+task-manager model, \texttt{spin2test.py} can encounter the annotation
+line \texttt{["4", "CALL", "WaitForSuspend", "2", "resumeRC"]}
+while scanning the generated trace. Python does not interpret that
+line beyond tokenising it. The token array is forwarded over the
+bridge, and the Haskell refiner then performs the stateful work:
+recording process ID 4, applying any switch or annotation handling
+required by the runtime flags, looking up \texttt{WaitForSuspend} in
+the refinement dictionary, and formatting the associated template with
+the arguments \texttt{2} and \texttt{resumeRC}. In the current model,
+that lookup expands into a logging call followed by a polling loop on
+\texttt{ctx->t\_isSuspend} until
+\texttt{RTEMS\_ALREADY\_SUSPENDED} is observed. The important design
+point is that Python does not need to know how that fragment is built;
+it only preserves the boundary and passes the same observable inputs
+that the old refiner used.
+
+The state after that command remains inside the Haskell process. The
+generated lines are accumulated in memory as part of the runtime state
+rather than being written to disk immediately. Only when Python later
+calls \texttt{test\_body()} does the bridge send
+\texttt{COMMAND:testBody}, receive the text body between
+\texttt{BEGIN} and \texttt{END} markers, and then assemble the final
+output file by writing the existing preamble, the rendered body, the
+postamble, and the run fragment. This separation is why the bridge can
+stay narrow: Python keeps responsibility for file-system
+orchestration, while Haskell owns the stateful translation from
+annotation stream to generated C.
+
+JSON plus line-oriented commands were sufficient because only two
+payload shapes had to cross the boundary: one configuration object at
+startup and one token list per annotation line. Everything else is a
+fixed command or returned body text. A richer RPC framework would have
+added complexity without improving the one property the dissertation
+needed most, namely a boundary that could be logged, replayed, and
+compared directly against the historical Python behaviour.
 
 % SUPERVISOR NOTE (p16): "Good." Keep this protocol sketch, but add a fuller
 % walkthrough around it: who sends each message, what state exists before/after it,
 % and why JSON plus line commands were sufficient for this project.
 
-This design also made differential checking a first-class part of the project rather than an afterthought. Because the Haskell refiner could be exercised with the same traces as the Python original, text diffs on generated tests became the main feedback loop. That in turn made it possible to move from a line-by-line translation strategy to a more Haskell-native design without losing confidence in the observable output.
+This design also made differential checking a first-class part of the
+project rather than an afterthought. Because the Haskell refiner could
+be exercised with the same traces as the Python original, text diffs
+on generated tests became the main feedback loop. That in turn made it
+possible to move from a line-by-line translation strategy to a more
+Haskell-native design without losing confidence in the observable
+output.
+
+Against the two main alternatives, the subprocess bridge performed
+best on the criteria that mattered most for this dissertation. It had
+the least build friction because Python only had to spawn an
+executable rather than import a shared library. It preserved the
+historical Python API because callers still interacted with a familiar
+\texttt{command}-style object. It was easier to debug because every
+request and response could be inspected as plain text. And it supported
+regression checking because the same annotation traces could be replayed
+through both implementations with minimal surrounding change. Its main
+cost was explicit message passing, but that cost was acceptable because
+the boundary was intentionally narrow.
 
 % LENGTH TARGET (+0.75 to 1 page): compare the adopted subprocess bridge with the
 % deeper alternatives mentioned in Chapter 2 using explicit criteria: build friction,
@@ -65,4 +215,11 @@ This design also made differential checking a first-class part of the project ra
 \section{Summary}
 \label{sec:SummaryDesign}
 
-In summary, the design of the dissertation is conservative at the system boundary and experimental inside the refiner itself. The boundary stays stable so that behaviour can be checked continuously, while the implementation behind that boundary is free to adopt a clearer Haskell structure.
+In summary, the design of the dissertation is conservative at the
+system boundary and experimental inside the refiner itself. The chosen
+boundary sits at \texttt{refine\_command} because that is the
+narrowest seam that still contains the most stateful part of the
+pipeline. By keeping Python responsible for orchestration and Haskell
+responsible for refinement, the project could preserve behaviour,
+replay the same traces, and justify the bridge as a deliberate design
+decision rather than as a temporary workaround.
