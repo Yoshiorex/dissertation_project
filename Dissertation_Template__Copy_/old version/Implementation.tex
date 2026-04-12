@@ -21,7 +21,7 @@ become generated C.
 % Trim repetition here and spend the recovered space lower down on mechanics,
 % examples, and concrete code-path explanation.
 
-the implementation followed a gradual transition from the original
+The implementation followed a gradual transition from the original
 Python refiner to a Haskell refiner while keeping the rest of the
 pipeline recognisable. In this repository snapshot, the main artefacts
 were the earlier Python refiner
@@ -31,9 +31,19 @@ were the earlier Python refiner
 everything at once, but to replace the refinement stage in a way that
 could be checked end to end against the old behaviour.
 
-A full rewrite from the start would have been risky. The refiner is small enough to look manageable, but it contains many state-dependent branches and many points where template expansion affects the final test file. Reaching the end of a full rewrite before comparing outputs would therefore have made it difficult to localise errors. The staged approach reduced that risk by keeping differential comparison in the loop throughout the port.
+A full rewrite from the start would have been risky. The refiner is
+small enough to look manageable, but it contains many state-dependent
+branches and many points where template expansion affects the final
+test file. Reaching the end of a full rewrite before comparing outputs
+would therefore have made it difficult to localise errors. The staged
+approach reduced that risk by keeping differential comparison in the
+loop throughout the port.
 
-The testing and debugging effort was directed toward functional equivalence with the Python generator. The Python output already matched the expected RTEMS test structure, so the main implementation question was whether the Haskell version could preserve that observable behaviour while using a clearer internal structure.
+The testing and debugging effort was directed toward functional
+equivalence with the Python generator. The Python output already
+matched the expected RTEMS test structure, so the main implementation
+question was whether the Haskell version could preserve that
+observable behaviour while using a clearer internal structure.
 
 The conservative part of the implementation was therefore the system
 boundary. \texttt{spin2test.py} would still discover the generated
@@ -53,8 +63,12 @@ enough to compare outputs continuously.
 % Also explain what changed on the Python side to preserve the historical command
 % interface while delegating the core refinement work to Haskell.
 
-During the transition, a bridge layer preserved the historical Python-facing \texttt{command} interface while moving the refinement work behind a subprocess. Python remained responsible for orchestrating the wider pipeline, but Haskell could now be exercised inside that pipeline without forcing an immediate rewrite of every caller.
-
+During the transition, a bridge layer preserved the historical
+Python-facing \texttt{command} interface while moving the refinement
+work behind a subprocess boundary. Python remained responsible for
+orchestrating the wider pipeline, but Haskell could now be exercised
+inside that pipeline without forcing an immediate rewrite of every
+caller.
 
 At the Python entry point, the actual calling pattern changed less
 than the architectural shift might suggest. \texttt{spin2test.py}
@@ -64,9 +78,9 @@ and writes the final output by placing generated code between the
 existing preamble, postamble, and run fragments. The main change is
 that it now imports \texttt{combined\_haskell\_bridge.py} as
 \texttt{refine} and constructs a bridge-backed \texttt{command}
-object instead of just importing \texttt{refine\_command.py}
+object instead of refining in-process.
 
-\begin{lstlisting}[language=Python, caption={Python-side calling preserved by the bridge}, label={lst:bridge-python-entry}]
+\begin{lstlisting}[language=Python, caption={Python-side calling pattern preserved by the bridge}, label={lst:bridge-python-entry}]
 cmd = refine.command(ref_dict)
 cmd.setupLanguage()
 for ln in annote_bundle:
@@ -79,11 +93,11 @@ Inside \texttt{combined\_haskell\_bridge.py}, the public
 \texttt{command} wrapper delegates to a smaller
 \texttt{\_HaskellBackend}. Startup has three visible steps. First,
 Python locates the \texttt{refine-haskell} executable and launches it
-in interactive mode with standard input and output.
+in interactive mode with line-buffered standard input and output.
 Second, it builds one JSON object containing the refinement
 dictionary and the three runtime flags
 \texttt{outputLOG}, \texttt{annoteComments}, and
-\texttt{outputSWITCH}. These are options that can be turned on and off, \texttt{outputLOG} for examplle toggles whether a log file is created. Third, it sends that object as an
+\texttt{outputSWITCH}. Third, it sends that object as an
 \texttt{INIT JSON:...} line and waits for a success response before
 continuing. This makes configuration loading explicit and gives one
 early failure point if JSON parsing or language setup goes wrong.
@@ -91,14 +105,14 @@ early failure point if JSON parsing or language setup goes wrong.
 Communication after startup is carried entirely through standard input
 and output. The bridge sends fixed commands such as
 \texttt{COMMAND:setupLanguage} and \texttt{COMMAND:testBody}, and it
-sends spin lines as JSON arrays via
+sends annotation lines as JSON arrays via
 \texttt{COMMAND:refineSPINLine:...}. On the Haskell side,
 \texttt{handleLine} decodes the command prefix, updates the in-memory
 runtime state, and responds with either
 \texttt{RESPONSE:SUCCESS:...} or \texttt{RESPONSE:FAILED:...}. On the
 Python side, \texttt{\_expect()} checks that each response begins
-with the required prefix. If \texttt{\_readline()} sees an
-unexpected EOF it triggers an immediate failure. The result is a deliberately
+with the required prefix, while \texttt{\_readline()} turns an
+unexpected EOF into an immediate failure. The result is a deliberately
 plain protocol in which invalid commands, malformed JSON, or a crashed
 subprocess are surfaced quickly at the boundary.
 
@@ -115,19 +129,20 @@ RESPONSE:SUCCESS:testBody:BEGIN
 RESPONSE:SUCCESS:testBody:END
 \end{lstlisting}
 
- After successful initialisation, the Haskell executable moves
+One useful detail is that the bridge has no dedicated shutdown
+command. After successful initialisation, the Haskell executable moves
 into a simple command loop that continues until standard input reaches
 EOF. In practice, the process lifetime is therefore tied to the
-Python caller. Once \texttt{spin2test.py} has requested the final test lines
-and has exited after writing the generated test file, the the standard input/ output close and
+Python caller. Once \texttt{spin2test.py} has requested the final body
+and exits after writing the generated test file, the pipes close and
 the interactive loop terminates. This keeps the protocol small, at the
-cost of relying on EOF rather than explicit session
+cost of relying on caller teardown rather than explicit session
 finalisation.
 
 This arrangement is deliberately plain, but that simplicity was useful
 in practice. Python continued to own file-system orchestration and the
-historical command interface, while Haskell owned only the
-translation from spin line stream to emitted body text. That narrow
+historical caller interface, while Haskell owned only the stateful
+translation from annotation stream to emitted body text. That narrow
 split is what allowed the bridge to be inserted with relatively little
 change on the Python side.
 
@@ -137,32 +152,44 @@ change on the Python side.
 % If necessary, replace full-file listings with excerpted fragments that only show
 % the mismatch being discussed, and move secondary detail into prose.
 
-A constant part of the porting process was checking the generated test files against the ones produced by the original system. At first this was done manually with an online text comparison tool, but that approach became unworkable once a single change could affect many generated files. A small local diff script therefore became part of the working process.
+A constant part of the porting process was checking the generated test
+files against the ones produced by the original system. At first this
+was done manually with an online text comparison tool, but that
+approach became unworkable once a single change could affect many
+generated files. A small local diff script therefore became part of
+the working process.
 
 \includecode{Sample of command line output}{Example output from the diff workflow showing a generated file diverging from the reference output. In practice, even a single extra line was worth investigating because small formatting mismatches could indicate a deeper error in template expansion.}{lst:snippet}{commandline.py}
 
-The diff-based approach was intentionally strict. It reported trivial whitespace differences as well as genuinely important mismatches. That occasionally produced noise, but it was still useful because it made it harder for a small divergence to go unnoticed and later turn into a larger behavioural discrepancy. In practice, most debugging started from a diff, then moved backwards through the relevant refinement dictionary entry and the code path that emitted it.
+The diff-based approach was intentionally strict. It reported trivial
+whitespace differences as well as genuinely important mismatches. That
+occasionally produced noise, but it was still useful because it made
+it harder for a small divergence to go unnoticed and later turn into a
+larger behavioural discrepancy. In practice, most debugging started
+from a diff, then moved backwards through the relevant refinement
+dictionary entry and the code path that emitted it.
 
-
-The brace mismatch shown in the diff output became a clear 
-example of why this workflow was useful. In the task-manager model, the
+The brace mismatch shown in the diff output became the clearest
+example of why this workflow mattered. In the task-manager model, the
 Haskell output initially contained \texttt{do \{\{} and
-\texttt{\}\} while} where the Python generator produced a single pair of braces, i.e. the valid C syntax. The underlying problem was not in the control-flow logic of
+\texttt{\}\} while} where the Python generator produced ordinary C
+braces. The underlying problem was not in the control-flow logic of
 the generated test, but in template handling. The refinement
 dictionaries store literal braces doubled so that Python
 \texttt{str.format()} will leave them intact. The first Haskell
 version replaced numbered placeholders but did not collapse doubled
 braces back to single ones afterwards. The result was syntactically
 invalid generated C even though the surrounding structure was correct.
-Fixing the haskell refiner ended up being as simple as adding an addtional case in teh pattern matching to account for it which restored parity with the Python output. This was a
+Fixing the formatter to unescape \texttt{\{\{} and \texttt{\}\}}
+after substitution restored parity with the Python output. This was a
 good example of a bug that was easiest to see at the level of emitted
 files rather than at the level of isolated helper functions.
 
 Smaller tests were also useful around configuration handling and local
 translation behaviour, but they were less decisive than the end-to-
 end diff checks. The hardest bugs were usually interactions between
-several moving parts at once: lines, templates,
-states, and  rendering. For those cases, comparing the
+several moving parts at once: one annotation line, one template,
+earlier state, and later rendering. For those cases, comparing the
 final generated C remained the most informative test.
 
 \subsection{Refine Command}
@@ -172,13 +199,34 @@ final generated C remained the most informative test.
 % dictionary entry, show the Haskell state transition(s), and end with the emitted C.
 % This is the cleanest way to add useful length without padding.
 
-This was the main file to be converted. Its job is to take annotated SPIN output and refine it into concrete test code by matching annotation lines against entries in a model-specific refinement dictionary. Those entries are small templates of C code with placeholders for names, values, and identifiers taken from the trace.
+This was the main file to be converted. Its job is to take annotated
+SPIN output and refine it into concrete test code by matching
+annotation lines against entries in a model-specific refinement
+dictionary. Those entries are small templates of C code with
+placeholders for names, values, and identifiers taken from the trace.
 
-At the beginning of the port, the Python code was translated into Haskell as closely as possible. The intention was to keep behaviour stable by keeping the structure stable. What became clear quite quickly, however, was that this strategy made the Haskell version look like Python written in another syntax. It preserved the awkward parts of the original without gaining much clarity from the new language.
+At the beginning of the port, the Python code was translated into
+Haskell as closely as possible. The intention was to keep behaviour
+stable by keeping the structure stable. What became clear quite
+quickly, however, was that this strategy made the Haskell version look
+like Python written in another syntax. It preserved the awkward parts
+of the original without gaining much clarity from the new language.
 
-The turning point came in state handling. The program has to remember whether the current annotation is inside a structure, inside a sequence, or part of ordinary top-level output. The Python version manages this with mutable object fields that are updated as each line is processed. That behaviour can be copied in Haskell, but copying it directly would have reproduced the same difficulty of following how state changes over time.
+The turning point came in state handling. The program has to remember
+whether the current annotation is inside a structure, inside a
+sequence, or part of ordinary top-level output. The Python version
+manages this with mutable object fields that are updated as each line
+is processed. That behaviour can be copied in Haskell, but copying it
+directly would have reproduced the same difficulty of following how
+state changes over time.
 
-The more Haskell-native approach was to make the state explicit. Instead of mutating fields on one long-lived object, each stage receives a runtime state, transforms it, and returns the next one. At that point the port stopped being a line-by-line translation and became a Haskell implementation that happened to preserve the same outputs. The aim from then on was not structural similarity to the Python source, but behavioural equivalence of the generated tests.
+The more Haskell-native approach was to make the state explicit.
+Instead of mutating fields on one long-lived object, each stage
+receives a runtime state, transforms it, and returns the next one. At
+that point the port stopped being a line-by-line translation and
+became a Haskell implementation that happened to preserve the same
+outputs. The aim from then on was not structural similarity to the
+Python source, but behavioural equivalence of the generated tests.
 
 The refiner therefore ended up with a clear two-level structure. One
 level applies generic steps that every annotation line goes through,
@@ -263,11 +311,11 @@ pidTxt:"CALL":name:args ->
       in addCode (pidFromText pidTxt) (splitLines callCode) rt
 \end{lstlisting}
 
-This is one place where the Haskell version became more direct than a
-literal translation. The branch says almost exactly what the operation
-means: find the template, instantiate it with the supplied arguments,
-split it into output lines, and append those lines to the runtime
-state under the current PID.
+This is one place where the Haskell version ended up clearer than a
+literal translation. The branch more or less says exactly what it
+does. It finds the template, fills in the given arguments, splits the
+result into lines, and adds those lines to the runtime state for the
+current PID.
 
 \paragraph{Sequence handling as an explicit transition}
 \begin{lstlisting}[language=Haskell, caption={Sequence state handled as an explicit transition}, label={lst:haskell-sequence-state}]
@@ -315,7 +363,7 @@ annotation line is logged into the generated output. Only after those
 generic steps does the \texttt{CALL} branch look up
 \texttt{WaitForSuspend} and instantiate the template arguments.
 
-\begin{lstlisting}[caption={Effect of one CALL line on the runtime state}, label={lst:waitforsuspend-state}]
+\begin{lstlisting}[caption={Illustrative effect of one CALL line on the runtime state}, label={lst:waitforsuspend-state}]
 After collectPIdsTokens:
   rtProcIds includes 4
 

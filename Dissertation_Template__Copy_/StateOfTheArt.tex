@@ -6,217 +6,78 @@
 % generation literature, especially OS/embedded/system-level work, and a clearer
 % bridge from the multilingual-systems literature into later design decisions.
 
-This chapter positions the dissertation within the background work that
-made the project possible. It first reviews model-checker-based test
-generation and the RTEMS-specific context, then discusses the
-functional programming ideas that motivate the use of Haskell, and
-finally considers the practical problems of combining Python and
-Haskell inside one toolchain.
+This chapter looks at the disserations place within the background work that made it project possible. It first reviews model checker based test generation, then discusses the functional programming ideas that motivate its use and the specific choice of Haskell, and finally considers the practical problems of combining Python and Haskell inside one toolchain.
 
 \section{Model Checking and Test Generation}
 
-Model checking is normally presented as a verification technique, but
-in this project it is used in a more operational way. SPIN explores
-the Promela model, produces counterexample traces when assertions are
-violated, and those traces are then treated as structured test
-scenarios rather than as the final result. The important point for
-this dissertation is that the generated test cases do not come
-directly from the model checker alone. They depend on a second
-translation stage that maps annotated SPIN output onto RTEMS-oriented
-test code.
+Model checking is normally presented as a verification technique, but in this project it is used in a more different way. SPIN explores the Promela model, produces counterexample traces. Traces are sequences of events, in this case recorded when assertions are violated, and those traces are then treated as the input for a test code generator rather than as the final result. The important point for this dissertation is that the generated test cases do not come directly from the model checker alone. They depend on a second translation stage that maps the traces onto RTEMS-oriented test code.
 
-The pipeline is therefore better understood as a two-stage system.
-SPIN explores the behaviour of Promela models and produces traces, but
-those traces are not executable tests by themselves. They still have
-to be interpreted through RTEMS-specific refinement rules,
-model-specific templates, and C code fragments before a complete test
-file exists. The correctness of the generated tests therefore depends
-not only on the search performed by the model checker, but also on the
-correctness of the translation layer that follows it.
+the pipeline is therefore a two stage system, which is incomplete with model checking alone. In the second step the traces produced by Spin are intepreted into test code using rtems specific refinement rules and C test code fragments and then assembled into a complete test file. the correctness of teh test produced therefore are dependent not just on the searching of the model checker but of the quality of the translation layer after it. 
 
-That distinction matters because the dissertation does not replace the modelling or exploration stages. The Promela models, SPIN search, and RTEMS test structure already existed. The difficult engineering problem is the refinement step in the middle: reading annotation lines such as \texttt{CALL}, \texttt{STATE}, \texttt{STRUCT}, and \texttt{SEQ}, tracking enough context to interpret them correctly, and emitting the right C fragments in the right order.
+That distinction between the first and second stage of the test generation matters for this disseration because the dissertation does not replace the modelling or exploration stages. The Promela models, SPIN search, and RTEMS test structure already existed and remained untouched for this project. The difficult engineering problem of concern is the refinement step that comes after the promela mode and spin traces but before completed test code: reading annotation lines such as \texttt{CALL}, \texttt{STATE}, \texttt{STRUCT}, and \texttt{SEQ}, tracking enough context to interpret them correctly, and emitting the right C fragments in the right order to create an executable that can verify teh behaviour of a real RTEMs deployment.
 
-A broader example of the same general idea appears in the work of
-Zheng et al. \citep{zheng2007model}. They use model checking to derive
-tests for service behaviour described in BPEL-style models. The domain
-is different from RTEMS, and the modelling formalism is different
-from the Promela workflow used here, but the wider pattern is similar:
-model checking is used to systematically derive execution scenarios,
-and a second stage turns those scenarios into executable tests. That
-makes this dissertation easier to place in a broader test-generation
-tradition rather than treating it as an isolated RTEMS-specific
-toolchain.
+ this translation layer is not simply a thin middleware that renames tokens with a fixed template where every line is intepreted separately to the whole. each line requires additional context from previous lines and must continue the context to the following lines. It must be able to determine whether the lines have entered or left higher level constructs such as strucutres or sequences. The translation layer can not be applied to any new system with manual adjustement first due to the fact that there are refinement dcitionaries and templates that are specific to each model that are required for the operation of the translation layer. For these reasons the refiner is better viewed as a stateful transformation system than a thin formatting layer.
+ 
 
-Seen in that wider literature, this dissertation is not another
-attempt to demonstrate that model checking can support automated test
-generation. That broader point is already established. The narrower
-question here is whether an existing trace-to-code refinement stage
-can be reimplemented in Haskell without interrupting or damaging the
-behaviour of the surrounding generation process. In that sense, the
-contribution is closer to a behaviour-preserving re-engineering study
-inside an established model-based test-generation workflow than to
-work whose primary contribution is a new modelling formalism or a new
-test-generation framework.
 
-Fraser et al. \citep{fraser2009testing} survey the field of testing
-with model checkers and make a useful distinction between two stages
-that are often blurred together: the search performed by the model
-checker itself, and the later engineering work required to turn
-counterexamples or witnesses into useful tests. That distinction is
-important here. SPIN is already capable of exploring the Promela
-models and producing traces, but the practical value of those traces
-depends on a later refinement stage that interprets them correctly and
-renders them into RTEMS-oriented test code. In other words, the
-dissertation is not primarily trying to improve model checking as a
-search technique. It is working on the translation layer that makes
-model-checker output usable inside an existing systems-software
-workflow.
 
-Other work comes closer to the shape of the current pipeline. Micskei
-and Majzik \citep{micskei2006modelbased} use model checkers to derive
-tests for event-driven embedded systems, showing that model-checker-
-based test generation is relevant to reactive and embedded software
-rather than only to protocol examples or toy specifications. Ulrich
-et al. \citep{ulrich2010scenarios} are also relevant because they make
-the implementation step explicit by moving from formal scenarios to
-concrete test implementations via Promela. These examples still differ
-from the RTEMS setting, but they narrow the gap significantly: they
-show that there is usually non-trivial engineering work between a
-formal execution artifact and a runnable test, and that this work
-cannot be treated as a trivial final formatting step.
 
-At the same time, not all closely related systems work goes as far as
-generated tests. Staroletov \citep{staroletov2020promela} models a
-partitioned real-time operating system in Promela for SPIN-based
-verification, demonstrating that Promela and SPIN are used on
-operating-system and scheduler behaviour as well as on communication
-protocols. That comparison helps sharpen what is specific about the
-RTEMS/SPIN pipeline used here. The present dissertation is not only
-about modelling operating-system behaviour, and not only about
-extracting abstract test sequences from a model checker. It combines
-both concerns: Promela models describe RTEMS behaviour, SPIN explores
-them, and a separate refinement stage must still map the resulting
-annotated traces into concrete validation code. That last translation
-step is where this dissertation is located.
+the work of  Micskei
+and Majzik \citep{micskei2006modelbased} comes closer to how the pipeline as seen in this dissertation exists. They use model checkers to create tests for embedded systems, showing that model checkers have value in actual systems and not just in theory as had been the case to that point.
+Ulrich
+
+
+A broader example of the same general idea appears in the work of Zheng et al. \citep{zheng2007model}. They use model checking to derive tests for service behaviour described in BPEL-style models. The domain is different from RTEMS, and the modelling formalism is different from the Promela workflow used here, but the wider pattern is similar: model checking is used to systematically derive execution scenarios, and a second stage turns those scenarios into executable tests. That makes this dissertation easier to place in a broader test-generation tradition rather than treating it as an isolated RTEMS-specific toolchain.
+
+et al. \citep{ulrich2010scenarios} are also relvant in that they emphasise the implementation step that comes after the model checker search. Ulrich wrote the program to create tests in Java but eventually came to decouple the backend from java in order to support other output langauges. This extensibility was something i wanted to emulate in this project
+
+In the context of model checking and test generation for RTEMS, the output of a model checker test generator must be valid C code that fits the functionality and quality standards of the exisitn test suites generated by hand by the RTEMS team. this standard was achieved by my predecessor who worked on the whole of the test generator system as applied to RTEMS \citep{jaskuc2022barrier} applied model checker test generation to RTEMS in the first place and thus is extremely relevant to this dissertation as its the code that is actually being converted. The entire system is written in Python as it was mandated by authority in control of the repository. this led to the compromise that they programs were written in python depsite the developers desire to be writitg in something fucntional, which ended up in the use of the external library Coconut which extends ptyhon to be more functional. why they would want to make it more fucntional is explored further in the next seciont
+
+
+Seen in the light of this existing paper, this is not another demonstration that model checking can support automasted test generation, this has already been illustrated well by the paper. this dissertation instead is about whther the existing trace to code refinment system can be reimplemented without intterujpting or damaging the behaviour of the overall generation process. this changed focus makes the disseration closer to a study of a behaviour rpeserving codebase refactoring then to the work whos main contribution is the creation of a new modelling test generation framework. the model checking test generation is just the area of application that is being studied in this disseration. 
+% SUPERVISOR NOTE (p11/p27): add 0.75 to 1 page here on additional model-checking-
+% based test generation papers, ideally including at least one operating-system or
+% systems-software example. Use that comparison to sharpen what is specific about
+% the RTEMS/SPIN pipeline.
 
 \section{Functional Programming and Haskell}
 
 % SUPERVISOR NOTE (p11): "Nice" -> this section already does its job. Keep any
 % additions modest and focused on the parts that later cash out in the implementation.
 
-A useful starting point for the Haskell side of the project is
-Hughes's argument that modularity is one of the strongest practical
-benefits of functional programming \citep{hughes1989why}. That is
-directly relevant here because the refiner is a transformation stage:
-it reads one representation of behaviour and incrementally builds
-another. A style that makes intermediate state and data flow explicit
-is therefore attractive, especially when behaviour must be preserved
-while the internal structure changes.
+A useful starting point for the Haskell side of the project is Hughes's argument that modularity is one of the strongest practical benefits of functional programming \citep{hughes1989why}. This is directly relevant here because the refiner is a transformation: it reads one representation of behaviour and incrementally builds another. A style that makes intermediate state and data flow explicit is therefore attractive, especially when behaviour must be preserved while the internal structure changes.
 
-That argument is useful here mainly because the refiner is full of
-small, state-dependent transformations. The code does not need a
-language chosen for novelty; it needs a language whose normal style
-encourages clearer composition and more local reasoning. In that sense
-the appeal of functional programming in this dissertation is practical
-rather than abstract. The main benefit is not that the program
-becomes mathematically elegant, but that the steps by which one
-annotation line changes the next runtime state can be expressed more
-directly.
+That argument is useful here mainly because the refiner is full of small, state-dependent transformations. The code does not need a language chosen for theoretical but usually unrealised benefits; it needs a language whose normal style encourages clearer composition and more local reasoning. In that sense the appeal of functional programming in this dissertation is practical rather than abstract. The main benefit is not that the program becomes mathematically elegant, but that the steps by which one annotation line changes the next runtime state can be expressed more directly and thus more intuitively altered.
 
-The project also draws on the general history and design goals of
-Haskell, summarised by Hudak et al. \citep{hudak2007history}.
-Haskell's combination of strong static typing, algebraic data types,
-pattern matching, and purity by default makes it well suited to
-programs that perform structured translation. Those properties do not
-automatically make the code correct, but they encourage an
-implementation style in which cases are more explicit and state
-changes are easier to trace.
+This project invovled learning about the history design goals of Haskell, summarised by Hudak et al. \citep{hudak2007history}. Haskell's combination of strong static typing, algebraic data types, pattern matching, and purity by default makes it well suited to programs that perform structured translation. THis is because, at least for this specific transformation there is constant pattern matching and also confusion that can arise from typing as traces which are ouputted as strings are necessarily processed, extracting the integers values held within. These properties do not automatically make the code correct , but they encourage an implementation style in which cases are more explicit and state changes are easier to trace.
 
-That history is also relevant because it frames Haskell as a language
-designed to support reusable abstraction and a clear common standard,
-rather than as a niche experiment. For this dissertation that matters
-because the port is not trying to prove that Haskell is universally
-better than Python. It is simply using a language whose usual tools
-fit a translation problem well: explicit data modelling, case
-analysis, and a clearer separation between pure transformation and
-boundary-facing input and output.
+That history is also relevant because it frames Haskell as a language designed to support reusable abstraction and a clear common standard, rather than as a niche experiment. For this dissertation that matters because the port is not trying to prove that Haskell is universally better than Python. It is simply using a language whose usual tools fit a translation problem well: explicit data modelling, case analysis, and a clearer separation between pure transformation and boundary-facing input and output.
 
-It is also worth stating the scope of the Haskell discussion. The
-Haskell used in this project was learned for the purposes of the
-dissertation rather than coming from a long sequence of formal
-Haskell modules. That matters because the claim being made is modest:
-not that the port represents expert use of the full language, but that
-a focused subset of Haskell was sufficient to express the refinement
-logic clearly enough to test whether behaviour could be preserved.
-
-
+It is also worth talking about the scope of haskells utilisation. The haskell as implemented in this project was learned for the purpose of this dissertation rather than from an extended period of getting to sit with the language in a formal academic module. This matters in that the port being done by the author will not be able to fully use all the theoretical benefits of the language to its fullest extent. Even so, with just a subset of the languages potential, the refinement program can be improved and then it will greatly ease further contributors in maximising the programs potential
 
 \section{Multi-Language Systems}
 
-The project is also part of a broader class of multilingual systems,
-where one language is introduced into an existing codebase rather than
-replacing it completely. A recent empirical study by Yang et al.
-\citep{yang2024multilanguage} highlights interface boundaries, data
-conversion, and error diagnosis as recurring sources of friction.
-Those concerns match the experience of this project closely. The main
-difficulty was not writing isolated Haskell functions, but deciding
-how Python and Haskell should communicate without making the combined
-system more fragile than the original one.
+The project is also part of a broader class of multilingual systems, where one language is introduced into an existing codebase rather than replacing it completely. A recent empirical study by Yang et al. \citep{yang2024multilanguage} highlights interface boundaries, data conversion, and error diagnosis as recurring sources of friction. Those concerns match the experience of this project closely. The main difficulty was not writing isolated Haskell functions, but deciding how Python and Haskell should communicate without making the combined system more fragile than the original one.
 
-This problem shaped the eventual architecture. Instead of a deep
-foreign-function interface, the project used a narrow subprocess
-protocol over standard input and output. That choice keeps the
-boundary explicit. Configuration is passed in as JSON, annotation
-lines are refined one at a time, and the rendered test body is
-returned at the end. The approach is less elegant than a direct
-import, but it is easier to inspect, easier to debug, and better
-aligned with the existing Python pipeline. It also reflects the main
-lesson of the multilingual-systems literature in a fairly direct way:
-once the boundary is explicit, it becomes easier to reason about what
-data crosses it and where failures should be diagnosed.
+This problem shaped the eventual architecture. Instead of a deep foreign-function interface, the project used a narrow subprocess protocol over standard input and output. That choice keeps the boundary explicit. Configuration is passed in as JSON, annotation lines are refined one at a time, and the rendered test body is returned at the end. The approach is less elegant than a direct import, but it is easier to inspect, easier to debug, and better aligned with the existing Python pipeline. It also reflects the main lesson of the multilingual-systems literature in a fairly direct way: once the boundary is explicit, it becomes easier to reason about what data crosses it and where failures should be diagnosed.
 
-The later design and implementation chapters unpack this in more
-concrete terms as trade-offs about build simplicity, inspectability,
-debuggability, and API stability.
+the later design and implementation chapters unpack this in more concrete terms by lookijg at the trade offs in inspectability, debugabillity and API stability.
 
 % SUPERVISOR NOTE (p12): "You should elaborate on some of those later" -> do that in
 % Chapters 3 and 4. Here, add only a short signpost sentence naming the concrete
 % trade-offs (build simplicity, inspectability, debuggability, API stability), then
 % unpack them with examples later.
 
-Two concrete integration options were considered during the project.
-The HaPy library \citep{fisher2014hapy} suggested a more direct
-Python-to-Haskell interface by exposing compiled Haskell code to
-Python, but its documented setup depends on shared-library builds and
-a limited set of supported exported types. The
-call-haskell-from-anything library \citep{hambuechen2011callhaskell}
-explored a more general MessagePack-based boundary over the C foreign-
-function interface. Both were useful as engineering reference points,
-but neither was adopted. The repository needed a controlled way to
-preserve the existing Python API while changing the implementation
-behind it, and the simpler subprocess boundary turned out to be the
-safer fit for that requirement.
+Two concrete integration options were considered during the project. The HaPy library \citep{fisher2014hapy} suggested a more direct Python-to-Haskell interface by exposing compiled Haskell code to Python, but its documented setup depends on shared-library builds and a limited set of supported exported types. The call-haskell-from-anything library \citep{hambuechen2011callhaskell} explored a more general MessagePack-based boundary over the C foreign-function interface.  Both were useful as engineering reference points, but neither was adopted. The repository needed a controlled way to preserve the existing Python API while changing the implementation behind it, and the simpler subprocess boundary turned out to be the safer fit for that requirement.
 
 % SUPERVISOR NOTE (p12): "Nice" -> keep this paragraph; it gives the later design
 % chapter something concrete to compare against.
 
 \section{Closely Related Work}
 
-The most directly relevant prior work is the earlier dissertation by
-Ja{\'s}ku{\'c} \citep{jaskuc2022barrier}. That work is important
-because it establishes the value of the underlying RTEMS/SPIN
-framework itself. The present dissertation does not need to justify
-the entire modelling approach from first principles; it builds on an
-existing system that had already shown that Promela models and SPIN
-traces could be refined into useful RTEMS tests.
+The most directly relevant prior work is the earlier dissertation by Ja{\'s}ku{\'c} \citep{jaskuc2022barrier}. That work is important because it establishes the value of the underlying RTEMS/SPIN framework itself. The present dissertation does not need to justify that the entire modelling approach is worthwhile; it builds on an existing system that had already shown that Promela models and SPIN traces could be refined into useful RTEMS tests.
 
-The difference in emphasis is therefore clear. The earlier work
-extended the range and usefulness of the RTEMS modelling framework.
-This dissertation instead studies the maintainability of one critical
-part of that framework by replacing the refinement stage with a
-Haskell implementation. The contribution is not a new manager model or
-a new coverage result, but a controlled port of the translation logic
-used by the existing models.
+The difference in emphasis is therefore clear. The earlier work extended the range and usefulness of the RTEMS modelling framework. This dissertation instead studies the maintainability of one important part of that framework by replacing the refinement stage with a Haskell version. The contribution is not a new manager model or a new coverage result, but a controlled port of the translation logic used by the existing models.
 
 \begin{table}[H]
 \begin{center}
@@ -275,9 +136,8 @@ dissertation.}
 \label{tab:state-of-the-art-context}
 \end{table}
 
-In summary, the literature and engineering context suggest two main
-conclusions. First, the project is well motivated as a study of how
-model-checker output can be preserved while the refinement stage is
-restructured. Second, the challenge is not only one of programming
-language choice, but also one of managing a clear interface between
-old and new implementations.
+In summary, the literature and engineering context suggest two main conclusions. First, the project looks to be a study of how model-checker output can be preserved while the refinement stage is restructured. Second, the challenge is not only one of programming language choice, but also one of managing a clear interface between old and new implementations.
+
+% SUPERVISOR NOTE (p13): add 2-3 sentences either here or in Chapter 1/4 stating
+% that the Haskell work was self-taught rather than coming from formal Haskell modules.
+% Keep it brief and use it to frame the scope, not as autobiography.

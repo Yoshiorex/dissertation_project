@@ -18,19 +18,11 @@ The repository used in this project contains a SPIN/Promela-based workflow for g
 
 The motivation for the project came from the structure of the existing refiner rather than from a failure of the generated tests. The Python version already generated useful RTEMS tests, but it accumulated mutable state, branching logic, and template expansion in one place. That made it harder to reason about the code, and it made larger structural changes risky. Haskell was therefore investigated not as a way to generate different tests, but as a way to re-express the same refinement logic with clearer state handling and stronger separation between stages.
 
-In addition i was interested in exploring the coding paradigm that is fucntional programming, as i had nto had the oppurtunity to investigate it before due to the modules covering it not being avaible to me as a computer engineer. self teaching myself haskell would be a great way to explore it deeply. 
-
-
-
 \section{Aim and Scope}
 
 The main aim of the dissertation is to determine whether the \texttt{refine\_command} stage can be ported from Python to Haskell while preserving the behaviour of the existing generator. In practical terms, that means the Haskell version should accept the same annotated SPIN output and produce equivalent test code for the existing RTEMS models.
 
 The scope of the work is deliberately narrow. The dissertation does not attempt to redesign the full \texttt{testbuilder} workflow, replace RTEMS itself, or prove that Haskell is universally better than Python for test generation. Instead, it focuses on one difficult, stateful part of the toolchain and studies how a gradual port can be carried out without losing confidence in the output.
-
-In order to smoothly port the python program to haskell, the dissertation aims to create a incremental delegation strategy to keep end to end functionality consistent while the program is being created. the idea is to have an intermediary program that sits in between the file to be ported and the file that calls it. the original implementation will be preseved in situe with the new implementation. at the beggining the intermediary program will give all work to the original implementation, but as the porting continues, the middleware will delegate more and more work to the new implementation until it is complete. i came up with this appraoch due to the desire to be entirely confident with the output of the system at all points in the project as i knew that the tests for rtems, the system which this codebase is for, are checked by rigourous quality control specialists. if i were to check the results of a partial program, i would want to be sure that it was progressing positively but i couldnt necessarily be sure of that just by looking at it myself. So i figured however that if the program in the end produced the same output as teh original that it would be a satisfactory port and i wouldnt have to know the details of the model checking or test generation to eb sure of it. so the aim to put this idea into practice
-
-
 
 The main contributions of the dissertation are:
 % SUPERVISOR NOTE (p9): make it explicit here that the bridge approach was your
@@ -38,7 +30,7 @@ The main contributions of the dissertation are:
 % LENGTH TARGET (+0.25 to 0.5 page): add 1 short paragraph before or after this
 % list explaining why the bridge strategy is a contribution in its own right.
 \begin{itemize}
-  \item devising a bridge-based strategy for introducing large code changes to an existing codebase without interupting end to end functionality
+  \item a bridge-based strategy for introducing a Haskell refiner without discarding the existing Python pipeline;
   \item an explicit-state Haskell implementation of the refinement stage;
   \item an empirical comparison of Python and Haskell generated outputs across the seven active Promela models in the repository.
 \end{itemize}
