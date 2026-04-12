@@ -4,7 +4,13 @@
 % REVISION NOTE (target +2 to 2.5 pages): this chapter can grow without padding by
 % spelling out the experimental method and the meaning of the remaining differences.
 
-This chapter evaluates the finished port against the main aim of the dissertation. It first explains how output comparison was carried out across the seven active repository models, then reports the differences that were found, including the one substantive task manager mismatch and its fix, and finally discusses what the experiment says about behavioural preservation and workflow compatibility.
+This chapter evaluates the port against the main aim of the
+dissertation. The point here is not to argue that the Haskell code is
+cleaner in the abstract. The point is to check whether it kept
+producing the same RTEMS test code as the existing Python refiner. The
+evaluation therefore uses direct output comparison across the active
+repository models, followed by a narrower replay of saved traces after
+the main task-manager bug was fixed.
 
 \section{Experiments}
 
@@ -13,13 +19,63 @@ This chapter evaluates the finished port against the main aim of the dissertatio
 % captured, how saved traces were replayed, how diffs were classified, and what counts
 % as semantic versus non-semantic. This is the easiest honest place to add substance.
 
-The evaluation was based on differential comparison between the original Python refiner and the Haskell refiner. For each of the seven active models in the repository, test code was generated once with the Python version and once with the Haskell version. The resulting files were then compared with a diff-based workflow, and each difference was classified as either semantic, where the generated C code changed meaning, or non-semantic, where only formatting changed.
+The evaluation was simple by design. For each active model in the
+repository, the same set of SPIN-generated traces was refined once by
+the Python version and once by the Haskell version. The resulting C
+files were then compared with a unified diff workflow. This was strict
+enough to catch even small changes, but it also stayed close to the
+real way the tool is used.
+
+The seven active models came from the repository model list:
+\texttt{barrier-mgr}, \texttt{chains}, \texttt{event-mgr},
+\texttt{msg-mgr}, \texttt{sem-mgr}, \texttt{task-mgr}, and
+\texttt{proto-sem}. Across those models, the saved comparison run
+covered 130 generated cases in total. The comparison artefacts were
+saved per model in four groups: the extracted \texttt{.spn} traces,
+the Python-generated C files, the Haskell-generated C files, and the
+unified diff files between them. Saving those intermediate artefacts
+was important because it allowed the refiner to be rechecked later
+without rerunning the whole search process.
+
+The comparison procedure had five steps.
+
+\begin{enumerate}
+\item SPIN was used to produce the available trail and
+\texttt{.spn} outputs for a model.
+\item Those traces were refined with the original Python refiner to
+produce a reference set of generated C files.
+\item The same traces were then refined with the Haskell refiner.
+\item Each Python/Haskell file pair was compared with a unified diff.
+\item Every mismatch was classified as either semantic or
+non-semantic.
+\end{enumerate}
+
+The classification step mattered because plain text difference is not
+the same thing as behavioural difference. A mismatch was treated as
+semantic when it changed the structure or validity of the generated C,
+for example the doubled-brace task-manager bug. A mismatch was treated
+as non-semantic when the generated code still differed textually but
+only by harmless whitespace, such as an extra blank line before a
+footer or section marker. This is a narrower claim than full formal
+equivalence, but it is the right one for a behaviour-preserving port
+whose immediate goal is to keep producing the same test files.
+
+After the task-manager formatter bug was fixed, a second and narrower
+experiment was run. Instead of regenerating everything again, the 19
+saved \texttt{task-mgr} \texttt{.spn} files were replayed directly
+through the updated Haskell refiner and compared against the saved
+Python outputs. That replay step isolated the refiner itself and made
+it easier to check whether the specific defect had actually been
+removed.
 
 
 
 \section{Results}
 
-The comparison covered all seven active repository models: \texttt{barrier-mgr}, \texttt{chains}, \texttt{event-mgr}, \texttt{msg-mgr}, \texttt{sem-mgr}, \texttt{task-mgr}, and \texttt{proto-sem}. The number of traces compared for each model and the remaining difference type after the final fix are shown in Table~\ref{tab:refine-compare-results}.
+The main comparison covered all seven active repository models. The
+number of saved traces compared for each model and the remaining
+difference type after the final fix are shown in
+Table~\ref{tab:refine-compare-results}.
 
 \begin{table}[H]
 \begin{center}
@@ -41,32 +97,92 @@ The comparison covered all seven active repository models: \texttt{barrier-mgr},
 \hline
 \texttt{proto-sem} & 5 & one extra blank line before the final SPDX footer \\
 \hline
+\textbf{Total} & \textbf{130} & all remaining differences were non-semantic whitespace \\
+\hline
 \end{tabular}
 \end{center}
 \caption[Comparison results across the seven models]{Comparison results across the seven models after fixing the substantive \texttt{task-mgr} formatting bug.}
 \label{tab:refine-compare-results}
 \end{table}
 
-This result is slightly more nuanced than simple text equality. Every compared file still differs textually, but after the final fix the remaining differences are all limited to harmless blank lines. For most models the extra line appears immediately before the final SPDX footer. For \texttt{sem-mgr} it appears just before the \texttt{// Task 0} section. These are therefore formatting mismatches rather than behavioural mismatches.
+The result is slightly more nuanced than simple text equality. Every
+compared file still differs textually, but after the final fix the
+remaining differences are all limited to harmless blank lines. For
+\texttt{barrier-mgr}, \texttt{chains}, \texttt{event-mgr},
+\texttt{msg-mgr}, \texttt{task-mgr}, and \texttt{proto-sem}, the
+extra line appears immediately before the final SPDX footer. For
+\texttt{sem-mgr}, the extra line appears before the
+\texttt{// Task 0} section. These are therefore formatting
+mismatches rather than behavioural mismatches.
 
-The one substantive difference found during evaluation appeared in \texttt{task-mgr} models 14 and 16. In those files the Python output contained \texttt{do \{ ... \} while (...)} while the Haskell output contained \texttt{do \{\{ ... \}\} while (...)}, which is not valid C. The source of the bug turned out not to be the task manager model itself, but a mismatch between Python \texttt{str.format} semantics and the Haskell template formatter. The refinement dictionary stored literal C braces as doubled braces, and the Haskell formatter replaced placeholders without collapsing \texttt{\{\{} and \texttt{\}\}} back to single braces.
+The one substantive difference found during evaluation appeared in
+\texttt{task-mgr} models 14 and 16. In those files the Python output
+contained \texttt{do \{ ... \} while (...)} while the Haskell output
+contained \texttt{do \{\{ ... \}\} while (...)}, which is not valid
+C. This was the only mismatch that clearly changed the generated code
+rather than just its formatting.
 
-\begin{lstlisting}[language=Haskell, caption={Brace escaping added to the Haskell template formatter}, label={lst:brace-unescape}]
-formatTemplate template args =
-	let indexed =
-				L.foldl'
-					(\acc (i, arg) -> T.replace ("{" <> tshow i <> "}") arg acc)
-					template
-					(zip [0 :: Int ..] args)
-			formatted = L.foldl' (\acc arg -> replaceFirst "{}" arg acc) indexed args
-	 in T.replace "}}" "}" (T.replace "{{" "{" formatted)
+\begin{lstlisting}[caption={Representative task-manager mismatch before the formatter fix}, label={lst:task-mgr-brace-diff}]
+Python:  do {
+Haskell: do {{
+
+Python:  } while (resumeRC != RTEMS_ALREADY_SUSPENDED);
+Haskell: }} while (resumeRC != RTEMS_ALREADY_SUSPENDED);
 \end{lstlisting}
 
 % SUPERVISOR NOTE (p24): "Nice example" -> keep this as the anchor defect case.
 % Add about 0.5 page explaining why it was representative, how the diff narrowed the
 % search, and why the remaining mismatches were judged harmless.
 
-After rebuilding the Haskell refiner and replaying the saved \texttt{task-mgr} \texttt{.spn} files, the doubled-brace mismatch disappeared. Models 14 and 16 then reduced to the same blank-line-only difference seen elsewhere. This is an important result for the dissertation because it shows that the diff workflow did not merely report mismatches; it also isolated one concrete defect and guided it to a specific fix.
+The reason this defect was a useful evaluation example is that the
+diff narrowed the search space quickly. The incorrect braces appeared
+inside a generated loop body that came from a refinement template,
+which pointed away from SPIN search itself and toward template
+instantiation. The mismatch also appeared only in the task-manager
+cases that exercised the \texttt{WaitForSuspend} path, which made it
+possible to focus on one concrete annotation/template pair rather than
+on the whole model. From there the underlying cause became clear: the
+Python implementation used \texttt{str.format()}, which preserves
+literal braces written as doubled braces, while the first Haskell
+formatter replaced placeholders without collapsing \texttt{\{\{}
+and \texttt{\}\}} back to single braces.
+
+After the formatter was corrected, the saved \texttt{task-mgr}
+\texttt{.spn} files were replayed through the updated Haskell
+refiner. That replay rechecked all 19 task-manager cases. The doubled-
+brace mismatch disappeared completely, and models 14 and 16 then
+reduced to the same blank-line-only difference seen elsewhere. This is
+important because it shows that the diff workflow did not merely
+report mismatches; it isolated one concrete defect, pointed to the
+right level of the implementation, and then provided a direct way to
+confirm the fix.
+
+The remaining blank-line mismatches were judged harmless for two
+reasons. First, unified diffs showed that they were confined to one
+empty line in a stable location, either immediately before the final
+SPDX footer or immediately before the \texttt{// Task 0} section in
+\texttt{sem-mgr}. Second, those differences did not alter identifiers,
+control flow, declarations, calls, or template-expanded values. In
+other words, the generated C still had the same structure and content;
+only the spacing around it differed.
+
+There is still a limit to what this evaluation shows. Text comparison
+is stricter than semantic comparison in one sense and weaker in
+another. It is stricter because it reports harmless whitespace changes
+that do not affect behaviour. It is weaker because textual similarity
+by itself does not prove full runtime equivalence. For this
+dissertation, however, direct output comparison was still the right
+main test. The project was not trying to invent a new generator. It
+was trying to replace one part of an existing generator without
+changing what came out of it.
+
+The scope of the result is also narrower than a general claim about
+all possible targets. The evaluation only covers the repository's
+current C-oriented workflow and the seven active models used in this
+project. Within that scope, the evidence supports the claim that the
+Haskell refiner preserved the observable output of the Python version
+apart from one concrete bug that was found and fixed, plus a small set
+of remaining whitespace-only differences.
 
 
 
@@ -74,4 +190,12 @@ After rebuilding the Haskell refiner and replaying the saved \texttt{task-mgr} \
 
 \section{Summary}
 
-The evaluation shows that the Haskell refiner preserves the behaviour of the Python version. One substantive task manager bug was found, traced to template brace escaping, and fixed. After that repair the remaining differences across all seven models were non-semantic blank lines.
+The evaluation supports the claim that the Haskell refiner preserved
+the behaviour of the Python version within the model set examined
+here. The broad comparison covered 130 saved cases across the seven
+active repository models. One substantive task-manager bug was found,
+traced to template brace escaping, and fixed. After that repair the
+remaining differences across all models were limited to non-semantic
+blank lines. That is not a formal proof of equivalence, but it is
+strong evidence that the port kept the existing workflow and generated
+output intact where this dissertation needed it to.

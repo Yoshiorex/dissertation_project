@@ -311,11 +311,11 @@ pidTxt:"CALL":name:args ->
       in addCode (pidFromText pidTxt) (splitLines callCode) rt
 \end{lstlisting}
 
-This is one place where the Haskell version became more direct than a
-literal translation. The branch says almost exactly what the operation
-means: find the template, instantiate it with the supplied arguments,
-split it into output lines, and append those lines to the runtime
-state under the current PID.
+This is one place where the Haskell version ended up clearer than a
+literal translation. The branch more or less says exactly what it
+does. It finds the template, fills in the given arguments, splits the
+result into lines, and adds those lines to the runtime state for the
+current PID.
 
 \paragraph{Sequence handling as an explicit transition}
 \begin{lstlisting}[language=Haskell, caption={Sequence state handled as an explicit transition}, label={lst:haskell-sequence-state}]
