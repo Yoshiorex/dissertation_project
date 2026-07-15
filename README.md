@@ -1,6 +1,7 @@
 # RTEMS SMP Formal
 
-This repository contains the models and tooling developed as part of the ESA-sponsored activity ***Qualification of RTEMS Symmetric Multiprocessing(SMP)***, as well as result of ongoing contributions by students at Trinity College Dublin to improve and extend them.
+This repository contains the models and tooling developed as part of the ESA-sponsored activity ***Qualification of RTEMS Symmetric Multiprocessing
+(SMP)***, as well as result of ongoing contributions by students at Trinity College Dublin to improve and extend them.
 
 ## Contributors
 
@@ -11,6 +12,7 @@ This repository contains the models and tooling developed as part of the ESA-spo
 * Eoin Lynch
 * James Gooding Hunt
 * Paddy Flanagan
+* Charles O'Malley
 
 ## License
 
